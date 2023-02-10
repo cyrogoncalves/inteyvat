@@ -1,6 +1,6 @@
 // https://www.redblobgames.com/pathfinding/a-star/introduction.html
 
-/** @typedef {{q:number, r:number}} Hex */
+export type Hex = {q:number, r:number}
 
 const axialDistance = (a, b) =>
     (Math.abs(a.q - b.q)
@@ -9,13 +9,7 @@ const axialDistance = (a, b) =>
 
 const directions = [[-1,1],[-1,0],[0,-1],[1,-1],[1,0],[0,1]];
 
-/**
- * @param {Hex} start
- * @param {Hex} goal
- * @param {Hex[]} obstacles
- * @returns {{[p: string]: Hex}|null}
- */
-const exploreFrontier = (start, goal, obstacles) => {
+const exploreFrontier = (start: Hex, goal: Hex, obstacles: Hex[]): {[p: string]: Hex}|null => {
   const frontier = [start];
   const cameFrom = {};
   const costSoFar = {[`${start.q}_${start.r}`]: 0};
@@ -43,13 +37,7 @@ const exploreFrontier = (start, goal, obstacles) => {
   return null;
 }
 
-/**
- * @param {Hex} start
- * @param {Hex} goal
- * @param {Hex[]} obstacles
- * @returns {Hex[]}
- */
-export const omastar = (start, goal, obstacles=[]) => {
+export const omastar = (start: Hex, goal: Hex, obstacles: Hex[]=[]): Hex[] => {
   const cameFrom = exploreFrontier(start, goal, obstacles);
   const path = [];
   for (let n = goal; n !== start; n = cameFrom[`${n.q}_${n.r}`])

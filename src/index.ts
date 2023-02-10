@@ -1,10 +1,9 @@
 import * as PIXI from "pixi.js";
-import { omastar } from "./omastar";
+import {Hex, omastar} from "./omastar";
 
-/** @typedef AvatarEntity = { hex: {q:number, r:number} sprite: PIXI.Sprite } */
+type AvatarEntity = { hex: {q:number, r:number}, sprite: PIXI.Sprite, x:number, y:number }
 
 const SIZE = 28;
-const SQRT3 = Math.sqrt(3);
 
 const axialRound = (x, y) => {
   const xGrid = Math.round(x), yGrid = Math.round(y);
@@ -14,13 +13,13 @@ const axialRound = (x, y) => {
   return {q:xGrid + dx, r:yGrid + dy};
 }
 
-const pixelToPointyHex = (x, y) => axialRound((SQRT3/3*x - 1./3*y)/SIZE, 2./3*y/SIZE);
+const pixelToPointyHex = (x, y) => axialRound((Math.sqrt(3)/3*x - 1./3*y)/SIZE, 2./3*y/SIZE);
 
-const pointyHexToPixel = ({q,r}) => ({x: SIZE*(SQRT3*q + SQRT3/2*r), y: SIZE*1.5*r});
+const pointyHexToPixel = ({q,r}) => ({x: SIZE*(Math.sqrt(3)*q + Math.sqrt(3)/2*r), y: SIZE*1.5*r});
 
 const sameHex = (h1, h2) => h1?.q === h2.q && h1?.r === h2.r;
 
-const drawHex = (path, { x, y }, color = 0xFFFFFF, size = SIZE) => {
+const drawHex = (path, { x, y }: {x:number, y:number}, color: number = 0xFFFFFF, size: number = SIZE) => {
   const points = [0,1,2,3,4,5].map(i => ({
     x: x + size * Math.cos(Math.PI / 180 * (60 * i - 30)),
     y: y + size * Math.sin(Math.PI / 180 * (60 * i - 30))
@@ -80,7 +79,7 @@ const addToContainer = (it, scale = 0.5) => {
   container.addChild(it.sprite);
   entities.push(it);
 }
-const newEntity = (hex, sourceImg) => ({
+const newEntity = (hex: Hex, sourceImg: string): AvatarEntity => ({
   hex,
   sprite: new PIXI.Sprite(PIXI.Texture.from(sourceImg)),
   get x() { return this.sprite.x },
@@ -88,8 +87,7 @@ const newEntity = (hex, sourceImg) => ({
 })
 
 let cur = 0;
-/** @type AvatarEntity[] */
-const team = ["lanka.png", "tartartaglia.png", "morax.png", "walnut.png"]
+const team: AvatarEntity[] = ["lanka.png", "tartartaglia.png", "morax.png", "walnut.png"]
   .map((n, i) => newEntity({ q:i+2, r:3 }, `assets/${n}`));
 team.forEach(t => {
   t.sprite.rotation = 0.06;
@@ -152,24 +150,13 @@ app.ticker.add(delta => tickers.forEach(t=>{
   if (t.elapsed > t.speed) { t.fn(); t.elapsed = 0.0; }
 }));
 
-/**
- * @param {AvatarEntity[]} team
- * @param {number} idx
- * @param {number} pos0q
- * @param {number} pos0r
- */
-const exchangePlaces = (team, idx, pos0q, pos0r) => {
+const exchangePlaces = (team: AvatarEntity[], idx: number, pos0q: number, pos0r: number): void => {
   [team[idx].hex.q, team[idx].hex.r] = [pos0q, pos0r];
   [team[idx], team[cur]] = [team[cur], team[idx]];
   cur = idx;
 }
 
-/**
- * @param {number} q
- * @param {number} r
- * @param {AvatarEntity[]} team
- */
-const move = ({q, r}, team) => {
+const move = ({q, r}: Hex, team: AvatarEntity[]): void => {
   let [pos0q, pos0r] = [team[cur].hex.q, team[cur].hex.r];
   team[cur].hex = {q:q, r:r};
 
