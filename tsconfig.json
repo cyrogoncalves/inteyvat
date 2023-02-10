@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "outDir": "./public/dist/",
+    "sourceMap": true,
+    "target": "es6",
+    "allowJs": true,
+  },
+  "include": ["src/**/*.ts"],
+  "exclude" : ["src/**/*.spec.ts"]
+}

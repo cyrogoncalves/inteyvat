@@ -1,0 +1,30 @@
+{
+  "name": "inteyvat",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && npm run build:cp-public",
+    "build:cp-public": "shx cp ./public/** ./dist",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "local": "npx webpack serve"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cyrogoncalves/inteyvat.git"
+  },
+  "author": "Cyro Gonçalves",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cyrogoncalves/inteyvat/issues"
+  },
+  "homepage": "https://github.com/cyrogoncalves/inteyvat#readme",
+  "devDependencies": {
+    "shx": "^0.3.4",
+    "ts-loader": "^9.4.2",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1",
+    "webpack-dev-server": "^4.11.1"
+  }
+}
