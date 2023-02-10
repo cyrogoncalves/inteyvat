@@ -111,6 +111,13 @@ team.forEach(t => {
   newEntity(hex, `./assets/${name}`))
   .forEach(it => addToContainer(it, 0.25));
 
+// enemies
+const enemies: AvatarEntity[] = [];
+const hilixu = newEntity({q:8,r:8}, `./assets/hilixu.png`);
+hilixu.sprite.rotation = 0.06
+enemies.push(hilixu);
+addToContainer(hilixu, 0.15)
+
 const updatePos = (it) => it.forEach(t => {
   const point = pointyHexToPixel(t.hex);
   [t.sprite.x, t.sprite.y] = [point.x, point.y];
@@ -124,6 +131,7 @@ const loot = [];
 
 const tickers = [
   {elapsed:0.0, speed:60, fn:()=>team.forEach(t => t.sprite.rotation = -t.sprite.rotation)},
+  {elapsed:0.0, speed:60, fn:()=>enemies.forEach(t => t.sprite.rotation = -t.sprite.rotation)},
   {elapsed:0.0, speed:20, fn:()=>{
       if (!follow) return;
       const step = path.shift();
@@ -131,6 +139,10 @@ const tickers = [
         move(step, team);
         drawPath(path, realPath);
         if (path.length !== 0) return;
+      } else if (enemies.includes(goalEntity)) {
+        console.log("fight!");
+        container.removeChild(goalEntity.sprite);
+        realPath.clear();
       } else {
         loot.push(goalEntity);
         entities.splice(entities.findIndex(it=>sameHex(it.hex, goalEntity.hex)), 1);
