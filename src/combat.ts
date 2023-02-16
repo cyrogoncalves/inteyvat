@@ -129,9 +129,9 @@ const chainedSwirlReaction: Reaction = {
 const damage: Reaction = {
   clause: $ => $.damage,
   effect: $ => {
-    if (Math.random() > $.source.aim * .05) // critical rate
+    if (Math.random() < $.source.aim * .05) // critical rate
       $.damage *= 1 + ($.source.blowout * .1) // critical damage multiplier
-    $.hp -= $.damage;
+    $.hp -= $.damage.value;
     delete $.damage;
   },
   priority: 101
@@ -144,11 +144,11 @@ const clearCombat: Reaction = {
   priority: 120
 }
 const reactions = [overload, catalyze, superconduct, freeze, bloom, spread, aggravate, vaporize, melt,
-  chainedSwirlReaction, damage, clearCombat, electroCharge, swirl]
+  chainedSwirlReaction, damage, clearCombat, electroCharge, swirl, cristalize]
   .sort((a,b)=> a.priority - b.priority)
 
-// stats for attack consist on attack, unit, team and environment bonuses.
-const strike = (
+// stats for attack consist on skill, unit, team and environment bonuses.
+export const strike = (
   unit,
   grid,
   skillName:string,
