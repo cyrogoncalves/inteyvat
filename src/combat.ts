@@ -139,7 +139,8 @@ const damage: Reaction = {
 const clearCombat: Reaction = {
   clause: _ => true,
   effect: $ => {
-    Object.keys($).filter(k=>$[k].ephemeral).forEach(k=>delete $[k])
+    // Object.keys($).filter(k=>$[k].ephemeral).forEach(k=>delete $[k])
+    delete $.source;
   },
   priority: 120
 }
@@ -157,8 +158,8 @@ export const strike = (
 ): void => {
   targets.forEach(t => {
     t.source = { ...unit.stats, ephemeral:true, unit }
-    Object.entries<object>(skill).forEach(([k,v]) =>
-      t[k] = { ...v, ephemeral:true })
+    Object.entries<object>(skill)
+      .forEach(([k,v]) => t[k] = { ...v })
   })
   reactions.forEach(r => targets.filter($=>r.clause($)).forEach($=>r.effect($)));
   // todo charge energy
