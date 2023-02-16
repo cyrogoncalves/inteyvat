@@ -1,8 +1,8 @@
-const twoWayReaction = ($, element1, element2): boolean =>
-  $.receiving.infusion === element1 && $.infusions.includes(element2)
-  || $.receiving.infusion === element2 && $.infusions.includes(element1)
+const PHCE = ["pyro", "hydro", "cryo", "electro"] as const;
 
-const auraReaction = (el1, el2, aura) => ({
+type Reaction = { clause:($)=>boolean, effect:($)=>void, priority:number };
+
+const auraReaction = (el1, el2, aura): Reaction => ({
   clause: ($) => $[el1] && $[el2],
   effect: $ => {
     $[aura.label] = aura;
@@ -12,14 +12,12 @@ const auraReaction = (el1, el2, aura) => ({
   priority: 95
 })
 
-const PHCE = ["pyro", "hydro", "cryo", "electro"] as const;
-
 // reactions
 const catalyze = auraReaction("dendro", "electro", "quicken");
-const burn = auraReaction("dendro", "pyro", "burn");
+// const burn = auraReaction("dendro", "pyro", "burn");
 const superconduct = auraReaction("cryo", "electro", "superconduct");
 const freeze = auraReaction("cryo", "hydro", "frozen");
-const vaporize = {
+const vaporize: Reaction = {
   clause: $ => $.hydro && $.pyro,
   effect: $ => {
     const keys = Object.keys($);
@@ -34,14 +32,14 @@ const vaporize = {
   },
   priority: 100
 }
-const melt = {
+const melt: Reaction = {
   clause: $ => $.cryo && $.pyro,
   effect: $ => {
     const keys = Object.keys($);
     if (keys.indexOf("pyro") > keys.indexOf("cryo")) {
       $.damage.value *= $.source.meltBonus || 1;
       delete $.pyro
-    } else { // reverse vaporize
+    } else { // reverse melt
       $.damage.value *= $.source.reverseMeltBonus || 1;
       $.pyro.duration -= 5;
     }
@@ -49,7 +47,7 @@ const melt = {
   },
   priority: 100
 }
-const spread = {
+const spread: Reaction = {
   clause: $ => $.quicken && $.dendro,
   effect: $ => {
     $.damage += $.source.spreadBonus || 0.0;
@@ -57,7 +55,7 @@ const spread = {
   },
   priority: 100
 }
-const aggravate = {
+const aggravate: Reaction = {
   clause: $ => $.quicken && $.electro,
   effect: $ => {
     $.damage += $.aggravateBonus || 0.0;
@@ -65,7 +63,7 @@ const aggravate = {
   },
   priority: 100
 }
-const cristalize = {
+const cristalize: Reaction = {
   clause: ($) => $.geo && PHCE.some(e => $[e]),
   effect: $ => {
     $.source.unit.addShield("cristalize"); // todo element
@@ -74,7 +72,7 @@ const cristalize = {
   },
   priority: 100
 }
-const overload = {
+const overload: Reaction = {
   clause: $ => $.pyro && $.electro,
   effect: $ => {
     delete $.pyro;
@@ -85,7 +83,7 @@ const overload = {
   },
   priority: 105
 }
-const bloom = {
+const bloom: Reaction = {
   clause: $ => $.hydro && $.dendro,
   effect: $ => {
     delete $.hydro;
@@ -94,10 +92,11 @@ const bloom = {
   },
   priority: 105
 }
-const electroCharge = {
-  clause: $ => twoWayReaction($, "hydro", "electro"),
+const electroCharge: Reaction = {
+  clause: $ => $.hydro && $.electro,
   effect: $ => {
-    $.infusions = $.infusions.filter(i => i !== "hydro" && i !== "dendro"); // todo tick down only
+    $.hydro.duration -= 3;
+    $.electro.duration -= 3;
     const damage = $.receiving.electroChargedBonus // 1
     $.hp -= damage
     $.map.enemiesCloseTo($.target).filter(e=>e.hydro)
@@ -105,48 +104,63 @@ const electroCharge = {
   },
   priority: 205
 }
-const swirl = {
-  clause: ($) => $.anemo && PHCE.some(e => $[e]),
+const swirl: Reaction = {
+  clause: $ => $.anemo && PHCE.some(e => $[e]),
   effect: $ => {
     const swirled = PHCE.find(e=>$[e]);
     const damage = $.source.swirlBonus // 1
     $.hp -= damage
     $.grid.enemiesCloseTo($.target).forEach(e => {
-      e.swirl = { ephemeral:true }
-      e[swirled] = { duration:10 }
+      e.swirl = { ephemeral:true, swirled }
     });
   },
   priority: 100
 }
-const reactions1 = [overload, catalyze, superconduct, freeze, bloom, spread, aggravate]
-const chainedSwirlReaction = {
-  clause: ($) => $.swirl,
+const reactions1: Reaction[] = [overload, catalyze, superconduct, freeze, bloom, spread, aggravate, vaporize, melt];
+const chainedSwirlReaction: Reaction = {
+  clause: $ => $.swirl,
   effect: $ => {
+    $[$.swirl.swirled] = { duration:10 }
     reactions1.filter(r=>r.clause($)).forEach(r=>r.effect($))
     delete $.swirl;
   },
   priority: 110
 }
-// damage, clear ephemeral infusions & "source"
-
-
-// function "strike" receiving unit skill and map-grid
-// calc targets
-// calc damage (with critical)
-// stack damage on targets (with power, cRate, cDmg, skill
+const damage: Reaction = {
+  clause: $ => $.damage,
+  effect: $ => {
+    if (Math.random() > $.source.aim * .05) // critical rate
+      $.damage *= 1 + ($.source.blowout * .1) // critical damage multiplier
+    $.hp -= $.damage;
+    delete $.damage;
+  },
+  priority: 101
+}
+const clearCombat: Reaction = {
+  clause: _ => true,
+  effect: $ => {
+    Object.keys($).filter(k=>$[k].ephemeral).forEach(k=>delete $[k])
+  },
+  priority: 120
+}
+const reactions = [overload, catalyze, superconduct, freeze, bloom, spread, aggravate, vaporize, melt,
+  chainedSwirlReaction, damage, clearCombat, electroCharge, swirl]
+  .sort((a,b)=> a.priority - b.priority)
 
 // stats for attack consist on attack, unit, team and environment bonuses.
-const strike = (unit, targets, atkName:string) => {
-  const atk = unit.attacks[atkName];
-  // TODO targets by attack and map-grid
-  let stats = unit.stats;
-  let dmg = atk.power + stats.power;
-  if (Math.random() > stats.aim * .05) // critical rate
-    dmg *= 1 + (stats.blowout * .1) // critical damage multiplier
-
-  // reactions
-
-
+const strike = (
+  unit,
+  grid,
+  skillName:string,
+  skill = unit.skills[skillName],
+  targets = grid.targetsFor(skill)
+): void => {
+  targets.forEach(t => {
+    t.source = { ...unit.stats, ephemeral:true, unit }
+    Object.entries<object>(skill).forEach(([k,v]) =>
+      t[k] = { ...v, ephemeral:true })
+  })
+  reactions.forEach(r => targets.filter($=>r.clause($)).forEach($=>r.effect($)));
   // todo charge energy
   // todo consume stamina
 }
