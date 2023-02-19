@@ -3,8 +3,8 @@ import * as hex from "./omastar";
 
 export type HexGridEntity = { hex: {q:number, r:number}, sprite: PIXI.Sprite, x:number, y:number }
 
-const drawHex = (path, { x, y }: {x:number, y:number}, color: number = 0xFFFFFF) => {
-  const points = hex.vertexesFor(x, y)
+const drawHex = (path, { x, y }: {x:number, y:number} = {x:0, y:0}, color: number = 0xFFFFFF) => {
+  const points = hex.vertexesFor(x, y);
   path.clear().lineStyle(3, color, .2).moveTo(points[5].x, points[5].y);
   points.forEach(p => path.lineTo(p.x, p.y));
 }
@@ -14,10 +14,13 @@ const drawPath = (path, realPath, {x,y}: {x:number, y:number}) => {
   path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
 }
 
-const app = new PIXI.Application({ width: 1000, height: 600,
-  backgroundColor: 0x1099bb, resolution: window.devicePixelRatio || 1 });
-// @ts-ignore TODO
-document.body.prepend(app.view);
+const app = new PIXI.Application({
+  view: document.getElementById("pixi-hex-grid") as HTMLCanvasElement,
+  width: 1000, height: 600,
+  backgroundColor: 0x1099bb,
+  resolution: window.devicePixelRatio || 1,
+  autoDensity: true,
+});
 
 const container = new PIXI.Container();
 Object.assign(container, { width:800, height:600 });
@@ -26,8 +29,13 @@ container.interactive = true;
 container.hitArea = new PIXI.Rectangle(0, 0, 800, 600);
 
 const inventory = new PIXI.Container();
-Object.assign(inventory, { width:200, height:600, x:800, y:0 });
+Object.assign(inventory, { x:800, y:0, width:200, height:600 });
 app.stage.addChild(inventory);
+inventory.interactive = true;
+inventory.hitArea = new PIXI.Rectangle(0, 0, 200, 600);
+inventory.on('pointerdown', ev => {
+  console.log(`Inventory click! x:${ev.data.x} y:${ev.data.y}`);
+})
 
 let path = null;
 const realPath = new PIXI.Graphics();
@@ -35,25 +43,26 @@ container.addChild(realPath);
 
 let cur = 0;
 const curHexPath = new PIXI.Graphics();
-app.stage.addChild(curHexPath);
+drawHex(curHexPath);
+container.addChild(curHexPath);
 
 let goal = null;
 let goalEntity: HexGridEntity = null;
 let follow = false;
 const selectedHexPath = new PIXI.Graphics();
-app.stage.addChild(selectedHexPath);
+container.addChild(selectedHexPath);
 
 let moveCount = 0;
 
 container.on('pointerdown', ev => {
-  const newGoal = hex.from(ev.data.global.x, ev.data.global.y);
+  const newGoal = hex.from(ev.data.x, ev.data.y);
   if (hex.sameCell(goal, newGoal)) return (follow = true); // second click on goal
   goal = newGoal;
   goalEntity = entities.find(it => hex.sameCell(goal, it.hex));
 
   if (team.includes(goalEntity)) { // clicked on a char
     cur = team.findIndex(c => c === goalEntity);
-    drawHex(curHexPath, team[cur]);
+    [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
     goalEntity = null;
     selectedHexPath.clear();
     realPath.clear();
@@ -79,7 +88,7 @@ const addToContainer = (it, scale = 0.5) => {
 
 const newEntity = (hex: hex.Hex, sourceImg: string): HexGridEntity => ({
   hex,
-  sprite: new PIXI.Sprite(PIXI.Texture.from(sourceImg)),
+  sprite: PIXI.Sprite.from(sourceImg),
   get x() { return this.sprite.x },
   get y() { return this.sprite.y }
 })
@@ -115,7 +124,7 @@ const updatePos = (it) => it.forEach(t => {
   [t.sprite.x, t.sprite.y] = [point.x, point.y];
 })
 updatePos(entities);
-drawHex(curHexPath, team[cur]);
+[curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
 
 
 const tickers = [
@@ -170,7 +179,7 @@ const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
     return exchangePlaces(team, team.findIndex(c=>c===slices[0][0]), pos0q, pos0r);
   slices[1].forEach(c=> [c.hex.q, c.hex.r, pos0q, pos0r] = [pos0q, pos0r, c.hex.q, c.hex.r]);
   updatePos(team);
-  drawHex(curHexPath, team[cur]);
+  [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
 
   document.getElementById("moves").innerHTML = String(++moveCount);
 }
