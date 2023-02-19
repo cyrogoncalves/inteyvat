@@ -1,11 +1,18 @@
 {
   "compilerOptions": {
-    "outDir": "./public/dist/",
+    "outDir": "./dist/",
     "sourceMap": true,
     "target": "es6",
+    "module": "ESNext",
+
     "allowJs": true,
+
+    // Settings for linking source files
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node"
+    "experimentalDecorators": true
   },
   "include": ["src/**/*.ts"],
   "exclude" : ["src/**/*.spec.ts"]
