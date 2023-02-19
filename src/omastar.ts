@@ -30,17 +30,16 @@ export const vertexesFor = (x:number, y:number, size=SIZE) => [0,1,2,3,4,5].map(
   y: y + size * Math.sin(Math.PI / 180 * (60 * i - 30))
 }));
 
-const directions = [[-1,1],[-1,0],[0,-1],[1,-1],[1,0],[0,1]];
-
 // https://www.redblobgames.com/pathfinding/a-star/introduction.html
-const exploreFrontier = (start: Hex, goal: Hex, obstacles: Hex[]): {[p: string]: Hex}|null => {
-  const frontier = [start];
-  const cameFrom = {};
+export const omastar = (start: Hex, goal: Hex, obstacles: Hex[]): Hex[]|null => {
+  const frontier: Hex[] = [start];
+  const cameFrom: {[p: string]: Hex} = {};
   const costSoFar = {[`${start.q}_${start.r}`]: 0};
 
   for (let count = 0; frontier.length > 0 && count < 1e4; count++) {
-    /** @type Hex */ const current = frontier.shift();
-    const neighbours = directions.map(d => ({q: current.q + d[0], r: current.r + d[1]}))
+    const current: Hex = frontier.shift();
+    const neighbours = [[-1, 1], [-1, 0], [0, -1], [1, -1], [1, 0], [0, 1]] // directions
+        .map<Hex>(d => ({q: current.q + d[0], r: current.r + d[1]}))
         .filter(n => !obstacles.some(o=> o.q===n.q && o.r===n.r))
         .sort((a, b) => axialDistance(goal, b) - axialDistance(goal, a));
     for (let next of neighbours) {
@@ -52,19 +51,16 @@ const exploreFrontier = (start: Hex, goal: Hex, obstacles: Hex[]): {[p: string]:
       // console.log([0, 1, 2, 3, 4, 5, 6, 7, 8].map(x => [0, 1, 2, 3, 4, 5].map(y =>
       //     /*`${x}_${y}:`+*/ String(costSoFar[`${x}_${y}`] ?? "-").padEnd(3)).join(" ")
       // ).join("\n"))
-      if (next.q === goal.q && next.r === goal.r) return cameFrom;
+      if (next.q === goal.q && next.r === goal.r) {
+        const path = [];
+        for (let n = goal; n !== start; n = cameFrom[`${n.q}_${n.r}`])
+          path.unshift(n);
+        return path;
+      }
       const priority = newCost + axialDistance(goal, next) // Math.abs(goal.q - next.q) + Math.abs(goal.r - next.r);
       const idx = frontier.findIndex(f => costSoFar[`${f.q}_${f.r}`] > priority);
       idx ? frontier.splice(idx - 1, 0, next) : frontier.push(next);
     }
   }
   return null;
-}
-
-export const omastar = (start: Hex, goal: Hex, obstacles: Hex[]=[]): Hex[] => {
-  const cameFrom = exploreFrontier(start, goal, obstacles);
-  const path = [];
-  for (let n = goal; n !== start; n = cameFrom[`${n.q}_${n.r}`])
-    path.unshift(n);
-  return path;
 }

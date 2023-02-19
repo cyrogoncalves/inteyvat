@@ -122,9 +122,9 @@ const loot = [];
 const updatePos = (it) => it.forEach(t => {
   const point = hex.toCenterPixel(t.hex);
   [t.sprite.x, t.sprite.y] = [point.x, point.y];
+  [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
 })
 updatePos(entities);
-[curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
 
 
 const tickers = [
@@ -156,14 +156,15 @@ const tickers = [
     }},
 ]
 app.ticker.add(delta => tickers.forEach(t=>{
-  t.elapsed += delta;
-  if (t.elapsed > t.speed) { t.fn(); t.elapsed = 0.0; }
+  if (t.elapsed + delta > t.speed) t.fn()
+  t.elapsed = (t.elapsed + delta) % t.speed;
 }));
 
 const exchangePlaces = (team: HexGridEntity[], idx: number, pos0q: number, pos0r: number): void => {
   [team[idx].hex.q, team[idx].hex.r] = [pos0q, pos0r];
   [team[idx], team[cur]] = [team[cur], team[idx]];
   cur = idx;
+  updatePos(team);
 }
 
 const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
@@ -179,7 +180,6 @@ const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
     return exchangePlaces(team, team.findIndex(c=>c===slices[0][0]), pos0q, pos0r);
   slices[1].forEach(c=> [c.hex.q, c.hex.r, pos0q, pos0r] = [pos0q, pos0r, c.hex.q, c.hex.r]);
   updatePos(team);
-  [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
 
   document.getElementById("moves").innerHTML = String(++moveCount);
 }
