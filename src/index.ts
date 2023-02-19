@@ -160,25 +160,25 @@ app.ticker.add(delta => tickers.forEach(t=>{
   t.elapsed = (t.elapsed + delta) % t.speed;
 }));
 
-const exchangePlaces = (team: HexGridEntity[], idx: number, pos0q: number, pos0r: number): void => {
-  [team[idx].hex.q, team[idx].hex.r] = [pos0q, pos0r];
+const exchangePlaces = (team: HexGridEntity[], idx: number, hex0: hex.Hex): void => {
+  team[idx].hex = hex0;
   [team[idx], team[cur]] = [team[cur], team[idx]];
   cur = idx;
   updatePos(team);
 }
 
 const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
-  let [pos0q, pos0r] = [team[cur].hex.q, team[cur].hex.r];
+  let hex0 = team[cur].hex;
   team[cur].hex = {q, r};
 
   const idx = team.findIndex(c=>c!==team[cur] && hex.sameCell(c.hex, team[cur].hex));
-  if (idx > 0) return exchangePlaces(team, idx, pos0q, pos0r) // if the hex already had a unit, just exchange places
+  if (idx > 0) return exchangePlaces(team, idx, hex0) // if the hex already had a unit, just exchange places
 
   const slices = [team.slice(0, cur).reverse(), team.slice(cur+1)]
     .sort((a,b)=>a.length-b.length);
   if (slices[0].length) // if it's in the middle of the line, just exchange places
-    return exchangePlaces(team, team.findIndex(c=>c===slices[0][0]), pos0q, pos0r);
-  slices[1].forEach(c=> [c.hex.q, c.hex.r, pos0q, pos0r] = [pos0q, pos0r, c.hex.q, c.hex.r]);
+    return exchangePlaces(team, team.findIndex(c=>c===slices[0][0]), hex0);
+  slices[1].forEach(c=> [c.hex, hex0] = [hex0, c.hex]);
   updatePos(team);
 
   document.getElementById("moves").innerHTML = String(++moveCount);
