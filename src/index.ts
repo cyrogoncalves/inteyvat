@@ -9,7 +9,7 @@ const drawHex = (path, { x, y }: {x:number, y:number}, color: number = 0xFFFFFF)
   points.forEach(p => path.lineTo(p.x, p.y));
 }
 
-const drawPath = (path, realPath, {x,y}=team[cur]) => {
+const drawPath = (path, realPath, {x,y}: {x:number, y:number}) => {
   realPath.clear().lineStyle(2, 0xFFFFFF, 1).moveTo(x, y);
   path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
 }
@@ -29,37 +29,46 @@ const inventory = new PIXI.Container();
 Object.assign(inventory, { width:200, height:600, x:800, y:0 });
 app.stage.addChild(inventory);
 
-const selectedHexPath = new PIXI.Graphics();
-app.stage.addChild(selectedHexPath);
-
+let path = null;
 const realPath = new PIXI.Graphics();
 container.addChild(realPath);
 
+let cur = 0;
 const curHexPath = new PIXI.Graphics();
 app.stage.addChild(curHexPath);
 
-let cur = 0;
-let path = null;
 let goal = null;
+let goalEntity: HexGridEntity = null;
 let follow = false;
-let goalEntity = null;
+const selectedHexPath = new PIXI.Graphics();
+app.stage.addChild(selectedHexPath);
+
 let moveCount = 0;
 
 container.on('pointerdown', ev => {
   const newGoal = hex.from(ev.data.global.x, ev.data.global.y);
   if (hex.sameCell(goal, newGoal)) return (follow = true); // second click on goal
   goal = newGoal;
-  if (team.some(t => hex.sameCell(goal, t.hex))) return; // clicked on a char
   goalEntity = entities.find(it => hex.sameCell(goal, it.hex));
-  const obstacles = entities.map(t=>t.hex).filter(it=>!hex.sameCell(it, goal));
+
+  if (team.includes(goalEntity)) { // clicked on a char
+    cur = team.findIndex(c => c === goalEntity);
+    drawHex(curHexPath, team[cur]);
+    goalEntity = null;
+    selectedHexPath.clear();
+    realPath.clear();
+    return;
+  }
+
+  const obstacles = entities.filter(it=>it!==goalEntity).map(t=>t.hex);
   path = hex.omastar(team[cur].hex, goal, obstacles);
 
   const color = goalEntity ? 0xFF6666 : 0xFFFF66;
   drawHex(selectedHexPath, hex.toCenterPixel(goal), color);
-  drawPath(path, realPath)
+  drawPath(path, realPath, team[cur]);
 });
 
-const entities = [];
+const entities: HexGridEntity[] = [];
 const addToContainer = (it, scale = 0.5) => {
   Object.assign(it.sprite, { interactive:true });
   it.sprite.anchor.set(0.5);
@@ -79,13 +88,6 @@ const team: HexGridEntity[] = ["lanka.png", "tartartaglia.png", "morax.png", "wa
   .map((n, i) => newEntity({ q:i+2, r:3 }, `assets/${n}`));
 team.forEach(t => {
   t.sprite.rotation = 0.06;
-  t.sprite.on('pointerdown', () => { // TODO move this to generic onPointerDown
-    cur = team.findIndex(c => c === t);
-    goal = null;
-    selectedHexPath.clear();
-    realPath.clear();
-    drawHex(curHexPath, team[cur]);
-  });
   addToContainer(t)
 });
 
@@ -117,14 +119,13 @@ drawHex(curHexPath, team[cur]);
 
 
 const tickers = [
-  {elapsed:0.0, speed:60, fn:()=>team.forEach(t => t.sprite.rotation = -t.sprite.rotation)},
-  {elapsed:0.0, speed:60, fn:()=>enemies.forEach(t => t.sprite.rotation = -t.sprite.rotation)},
+  {elapsed:0.0, speed:60, fn:()=>entities.forEach(t => t.sprite.rotation = -t.sprite.rotation)},
   {elapsed:0.0, speed:20, fn:()=>{
       if (!follow) return;
       const step = path.shift();
       if (!hex.sameCell(goalEntity?.hex, step)) {
         move(step, team);
-        drawPath(path, realPath);
+        drawPath(path, realPath, team[cur]);
         if (path.length !== 0) return;
       } else if (enemies.includes(goalEntity)) {
         console.log("fight!");
@@ -136,7 +137,8 @@ const tickers = [
         console.log("pick!", entities);
         container.removeChild(goalEntity.sprite);
         inventory.addChild(goalEntity.sprite);
-        [goalEntity.hex.q, goalEntity.hex.r] = [1 + loot.length%2, 1 + Math.floor(loot.length/2)];
+        goalEntity.hex.q = 1 + loot.length%2;
+        goalEntity.hex.r = 1 + Math.floor(loot.length/2);
         updatePos(loot);
         realPath.clear();
       }
@@ -157,14 +159,14 @@ const exchangePlaces = (team: HexGridEntity[], idx: number, pos0q: number, pos0r
 
 const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
   let [pos0q, pos0r] = [team[cur].hex.q, team[cur].hex.r];
-  team[cur].hex = {q:q, r:r};
+  team[cur].hex = {q, r};
 
   const idx = team.findIndex(c=>c!==team[cur] && hex.sameCell(c.hex, team[cur].hex));
   if (idx > 0) return exchangePlaces(team, idx, pos0q, pos0r) // if the hex already had a unit, just exchange places
 
   const slices = [team.slice(0, cur).reverse(), team.slice(cur+1)]
     .sort((a,b)=>a.length-b.length);
-  if (slices[0].length) // if it's in the middle of the line, also just exchange places
+  if (slices[0].length) // if it's in the middle of the line, just exchange places
     return exchangePlaces(team, team.findIndex(c=>c===slices[0][0]), pos0q, pos0r);
   slices[1].forEach(c=> [c.hex.q, c.hex.r, pos0q, pos0r] = [pos0q, pos0r, c.hex.q, c.hex.r]);
   updatePos(team);
