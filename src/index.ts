@@ -1,15 +1,15 @@
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 
-export type HexGridEntity = { hex: {q:number, r:number}, sprite: PIXI.Sprite, x:number, y:number }
+export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite }
 
-const drawHex = (path, { x, y }: {x:number, y:number} = {x:0, y:0}, color: number = 0xFFFFFF) => {
+const drawHex = (path: PIXI.Graphics, { x, y }: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
   const points = hex.vertexesFor(x, y);
   path.clear().lineStyle(3, color, .2).moveTo(points[5].x, points[5].y);
   points.forEach(p => path.lineTo(p.x, p.y));
 }
 
-const drawPath = (path, realPath, {x,y}: {x:number, y:number}) => {
+const drawPath = (path: hex.Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointData) => {
   realPath.clear().lineStyle(2, 0xFFFFFF, 1).moveTo(x, y);
   path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
 }
@@ -46,7 +46,7 @@ const curHexPath = new PIXI.Graphics();
 drawHex(curHexPath);
 container.addChild(curHexPath);
 
-let goal = null;
+let goal: hex.Hex = null;
 let goalEntity: HexGridEntity = null;
 let follow = false;
 const selectedHexPath = new PIXI.Graphics();
@@ -62,7 +62,7 @@ container.on('pointerdown', ev => {
 
   if (team.includes(goalEntity)) { // clicked on a char
     cur = team.findIndex(c => c === goalEntity);
-    [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
+    curHexPath.position = team[cur].sprite;
     goalEntity = null;
     selectedHexPath.clear();
     realPath.clear();
@@ -74,12 +74,12 @@ container.on('pointerdown', ev => {
 
   const color = goalEntity ? 0xFF6666 : 0xFFFF66;
   drawHex(selectedHexPath, hex.toCenterPixel(goal), color);
-  drawPath(path, realPath, team[cur]);
+  drawPath(path, realPath, team[cur].sprite);
 });
 
 const entities: HexGridEntity[] = [];
 const addToContainer = (it, scale = 0.5) => {
-  Object.assign(it.sprite, { interactive:true });
+  // Object.assign(it.sprite, { interactive:true });
   it.sprite.anchor.set(0.5);
   it.sprite.scale.set(scale);
   container.addChild(it.sprite);
@@ -88,13 +88,15 @@ const addToContainer = (it, scale = 0.5) => {
 
 const newEntity = (hex: hex.Hex, sourceImg: string): HexGridEntity => ({
   hex,
-  sprite: PIXI.Sprite.from(sourceImg),
-  get x() { return this.sprite.x },
-  get y() { return this.sprite.y }
+  sprite: PIXI.Sprite.from(sourceImg)
 })
 
-const team: HexGridEntity[] = ["lanka.png", "tartartaglia.png", "morax.png", "walnut.png"]
-  .map((n, i) => newEntity({ q:i+2, r:3 }, `assets/${n}`));
+const team: HexGridEntity[] = [
+  { hex: { q:2, r:3 }, sprite: PIXI.Sprite.from("assets/lanka.png") },
+  { hex: { q:3, r:3 }, sprite: PIXI.Sprite.from("assets/tartartaglia.png") },
+  { hex: { q:4, r:3 }, sprite: PIXI.Sprite.from("assets/morax.png") },
+  { hex: { q:5, r:3 }, sprite: PIXI.Sprite.from("assets/walnut.png") },
+];
 team.forEach(t => {
   t.sprite.rotation = 0.06;
   addToContainer(t)
@@ -119,11 +121,10 @@ addToContainer(hilixu, 0.15)
 
 const loot = [];
 
-const updatePos = (it) => it.forEach(t => {
-  const point = hex.toCenterPixel(t.hex);
-  [t.sprite.x, t.sprite.y] = [point.x, point.y];
-  [curHexPath.x, curHexPath.y] = [team[cur].x, team[cur].y];
-})
+const updatePos = (it) => {
+  it.forEach(t => t.sprite.position = hex.toCenterPixel(t.hex));
+  curHexPath.position = team[cur].sprite
+}
 updatePos(entities);
 
 
@@ -134,7 +135,7 @@ const tickers = [
       const step = path.shift();
       if (!hex.sameCell(goalEntity?.hex, step)) {
         move(step, team);
-        drawPath(path, realPath, team[cur]);
+        drawPath(path, realPath, team[cur].sprite);
         if (path.length !== 0) return;
       } else if (enemies.includes(goalEntity)) {
         console.log("fight!");
@@ -167,9 +168,9 @@ const exchangePlaces = (team: HexGridEntity[], idx: number, hex0: hex.Hex): void
   updatePos(team);
 }
 
-const move = ({q, r}: hex.Hex, team: HexGridEntity[]): void => {
+const move = (goal: hex.Hex, team: HexGridEntity[]): void => {
   let hex0 = team[cur].hex;
-  team[cur].hex = {q, r};
+  team[cur].hex = goal;
 
   const idx = team.findIndex(c=>c!==team[cur] && hex.sameCell(c.hex, team[cur].hex));
   if (idx > 0) return exchangePlaces(team, idx, hex0) // if the hex already had a unit, just exchange places
