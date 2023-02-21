@@ -3,7 +3,7 @@ const PHCE = ["pyro", "hydro", "cryo", "electro"] as const;
 type Reaction = { clause:($)=>boolean, effect:($)=>void, priority:number };
 
 const auraReaction = (el1, el2, aura): Reaction => ({
-  clause: ($) => $[el1] && $[el2],
+  clause: $ => $[el1] && $[el2],
   effect: $ => {
     $[aura.label] = aura;
     delete $[el1];
@@ -110,9 +110,8 @@ const swirl: Reaction = {
     const swirled = PHCE.find(e=>$[e]);
     const damage = $.source.swirlBonus // 1
     $.hp -= damage
-    $.grid.enemiesCloseTo($.target).forEach(e => {
-      e.swirl = { ephemeral:true, swirled }
-    });
+    $.grid.enemiesCloseTo($.target)
+      .forEach(e => e.swirl = { swirled });
   },
   priority: 100
 }
@@ -157,11 +156,10 @@ export const strike = (
   targets = grid.targetsFor(skill)
 ): void => {
   targets.forEach(t => {
-    t.source = { ...unit.stats, ephemeral:true, unit }
-    Object.entries<object>(skill)
-      .forEach(([k,v]) => t[k] = { ...v })
+    t.source = { ...unit.stats, unit }
+    Object.assign(t, skill);
   })
-  reactions.forEach(r => targets.filter($=>r.clause($)).forEach($=>r.effect($)));
+  reactions.forEach(r => targets.filter(r.clause).forEach(r.effect));
   // todo charge energy
   // todo consume stamina
 }
