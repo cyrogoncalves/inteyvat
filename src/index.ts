@@ -102,10 +102,10 @@ container.on('pointerdown', ev => {
 });
 
 const entities: HexGridEntity[] = [];
-const addToContainer = (it, scale = 0.5) => {
+const addToContainer = (it, scale=null) => {
   it.sprite.anchor.set(0.5);
   it.sprite.texture.baseTexture.on('loaded', () =>
-    it.sprite.scale.set(scale || (hex.SIZE * Math.sqrt(3) / it.sprite.height)));
+    it.sprite.scale.set(scale || hex.SIZE * Math.sqrt(3) / it.sprite.height));
   container.addChild(it.sprite);
   entities.push(it);
 }
@@ -136,14 +136,17 @@ drawHealthBar(healthBar, team[cur]);
   {hex: {q:1,r:9}, name:"Viridescent Arrow Feather.png"},
 ].map(({hex, name}) =>
   newEntity(hex, `./assets/${name}`))
-  .forEach(it => addToContainer(it, 0.25));
+  .forEach(it => addToContainer(it));
 
 // enemies
 const enemies: HexGridEntity[] = [];
-const hilixu = newEntity({q:8,r:8}, `./assets/hilixu.png`);
-hilixu.sprite.rotation = 0.06
-enemies.push(hilixu);
-addToContainer(hilixu, 0.15)
+for (let i = 0; i < 5; i++) {
+  const hilixu = newEntity({q:9-i,r:5+(i*4)%9}, `./assets/hilixu.png`);
+  hilixu.sprite.rotation = 0.06
+  hilixu.sprite.tint = 0x89da86;
+  enemies.push(hilixu);
+  addToContainer(hilixu)
+}
 
 const loot = [];
 
