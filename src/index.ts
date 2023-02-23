@@ -2,7 +2,8 @@ import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import {vertexesFor} from "./omastar";
 
-export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite }
+type Stats = { hp:number, endurance:number }
+export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, stats: Stats }
 
 const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
   const points = hex.vertexesFor(point);
@@ -58,9 +59,14 @@ const curHexPath = new PIXI.Graphics();
 drawHex(curHexPath);
 container.addChild(curHexPath);
 
-const healthBar = new PIXI.Graphics().lineStyle(4, 0x95d586, .8)
-  .moveTo(-28*.6, 28).lineTo(28*.6, 28);
+const healthBar = new PIXI.Graphics();
 container.addChild(healthBar);
+const drawHealthBar = (healthBar, entity:HexGridEntity) => {
+  const x = -28*.6 + entity.stats.hp / entity.stats.endurance * 28*2*.6;
+  healthBar.clear().moveTo(-28*.6, 28)
+    .lineStyle(4, 0x95d586, .8).lineTo(x, 28)
+    .lineStyle(4, 0x888888, .8).lineTo(28*.6, 28);
+}
 
 let goal: hex.Hex = null;
 let goalEntity: HexGridEntity = null;
@@ -79,6 +85,7 @@ container.on('pointerdown', ev => {
   if (team.includes(goalEntity)) { // clicked on a char
     cur = team.findIndex(c => c === goalEntity);
     curHexPath.position = team[cur].sprite;
+    drawHealthBar(healthBar, team[cur]);
     healthBar.position = team[cur].sprite;
     goalEntity = null;
     selectedHexPath.clear();
@@ -105,19 +112,21 @@ const addToContainer = (it, scale = 0.5) => {
 
 const newEntity = (hex: hex.Hex, sourceImg: string): HexGridEntity => ({
   hex,
+  stats: { hp:10, endurance:10 },
   sprite: PIXI.Sprite.from(sourceImg)
 })
 
 const team: HexGridEntity[] = [
-  { hex: { q:2, r:3 }, sprite: PIXI.Sprite.from("assets/lanka.png") },
-  { hex: { q:3, r:3 }, sprite: PIXI.Sprite.from("assets/tartartaglia.png") },
-  { hex: { q:4, r:3 }, sprite: PIXI.Sprite.from("assets/morax.png") },
-  { hex: { q:5, r:3 }, sprite: PIXI.Sprite.from("assets/walnut.png") },
+  { hex: { q:2, r:3 }, stats:{ hp:10, endurance:10 }, sprite: PIXI.Sprite.from("assets/lanka.png") },
+  { hex: { q:3, r:3 }, stats:{ hp:9, endurance:10 }, sprite: PIXI.Sprite.from("assets/tartartaglia.png") },
+  { hex: { q:4, r:3 }, stats:{ hp:8, endurance:10 }, sprite: PIXI.Sprite.from("assets/morax.png") },
+  { hex: { q:5, r:3 }, stats:{ hp:7, endurance:10 }, sprite: PIXI.Sprite.from("assets/walnut.png") },
 ];
 team.forEach(t => {
   t.sprite.rotation = 0.06;
   addToContainer(t)
 });
+drawHealthBar(healthBar, team[cur]);
 
 [ // loot on map
   {hex: {q:8,r:5}, name:"Gladiator's Nostalgia.png"},
