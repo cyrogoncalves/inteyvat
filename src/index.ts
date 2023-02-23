@@ -167,6 +167,8 @@ const tickers = [
       } else if (enemies.includes(goalEntity)) {
         console.log("fight!");
         container.removeChild(goalEntity.sprite);
+        team[cur].stats.hp -= 4;
+        drawHealthBar(healthBar, team[cur]);
         realPath.clear();
       } else {
         loot.push(goalEntity);
