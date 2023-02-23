@@ -1,10 +1,11 @@
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
+import {vertexesFor} from "./omastar";
 
 export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite }
 
-const drawHex = (path: PIXI.Graphics, { x, y }: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
-  const points = hex.vertexesFor(x, y);
+const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
+  const points = hex.vertexesFor(point);
   path.clear().lineStyle(3, color, .2).moveTo(points[5].x, points[5].y);
   points.forEach(p => path.lineTo(p.x, p.y));
 }
@@ -27,6 +28,17 @@ Object.assign(container, { width:800, height:600 });
 app.stage.addChild(container);
 container.interactive = true;
 container.hitArea = new PIXI.Rectangle(0, 0, 800, 600);
+
+const gridOutline = new PIXI.Graphics();
+gridOutline.lineStyle(2, 0xFFFFFF, .1);
+container.addChild(gridOutline);
+for (let q = 0; q < 17; q++) {
+  for (let r = 0; r < 15; r++) {
+    const v = vertexesFor(hex.toCenterPixel({q: q - (r - (r & 1)) / 2, r}));
+    gridOutline.moveTo(v[5].x, v[5].y).lineTo(v[0].x, v[0].y)
+      .lineTo(v[1].x, v[1].y).lineTo(v[2].x, v[2].y);
+  }
+}
 
 const inventory = new PIXI.Container();
 Object.assign(inventory, { x:800, y:0, width:200, height:600 });
