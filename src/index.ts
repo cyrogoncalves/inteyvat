@@ -6,12 +6,12 @@ export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite }
 
 const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
   const points = hex.vertexesFor(point);
-  path.clear().lineStyle(3, color, .2).moveTo(points[5].x, points[5].y);
+  path.clear().lineStyle(3, color, .4).moveTo(points[5].x, points[5].y);
   points.forEach(p => path.lineTo(p.x, p.y));
 }
 
 const drawPath = (path: hex.Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointData) => {
-  realPath.clear().lineStyle(2, 0xFFFFFF, 1).moveTo(x, y);
+  realPath.clear().lineStyle(2, 0xFFFFFF).moveTo(x, y);
   path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
 }
 
@@ -58,6 +58,10 @@ const curHexPath = new PIXI.Graphics();
 drawHex(curHexPath);
 container.addChild(curHexPath);
 
+const healthBar = new PIXI.Graphics().lineStyle(4, 0x95d586, .8)
+  .moveTo(-28*.6, 28).lineTo(28*.6, 28);
+container.addChild(healthBar);
+
 let goal: hex.Hex = null;
 let goalEntity: HexGridEntity = null;
 let follow = false;
@@ -75,6 +79,7 @@ container.on('pointerdown', ev => {
   if (team.includes(goalEntity)) { // clicked on a char
     cur = team.findIndex(c => c === goalEntity);
     curHexPath.position = team[cur].sprite;
+    healthBar.position = team[cur].sprite;
     goalEntity = null;
     selectedHexPath.clear();
     realPath.clear();
@@ -136,6 +141,7 @@ const loot = [];
 const updatePos = (it) => {
   it.forEach(t => t.sprite.position = hex.toCenterPixel(t.hex));
   curHexPath.position = team[cur].sprite
+  healthBar.position = team[cur].sprite;
 }
 updatePos(entities);
 
