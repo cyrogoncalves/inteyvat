@@ -1,4 +1,4 @@
-const SIZE = 28;
+export const SIZE = 28;
 
 export type Hex = {q:number, r:number}
 

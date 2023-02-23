@@ -96,9 +96,9 @@ container.on('pointerdown', ev => {
 
 const entities: HexGridEntity[] = [];
 const addToContainer = (it, scale = 0.5) => {
-  // Object.assign(it.sprite, { interactive:true });
   it.sprite.anchor.set(0.5);
-  it.sprite.scale.set(scale);
+  it.sprite.texture.baseTexture.on('loaded', () =>
+    it.sprite.scale.set(scale || (hex.SIZE * Math.sqrt(3) / it.sprite.height)));
   container.addChild(it.sprite);
   entities.push(it);
 }
