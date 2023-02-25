@@ -253,4 +253,20 @@ texty.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
 texty.position = {x:-42, y:46};
 hudContainer.addChild(texty);
 
+const statsPanel = new PIXI.Container();
+const statsPanelBg = new PIXI.Graphics();
+statsPanelBg.beginFill(0xFFFF00)
+  .lineStyle(5, 0xFF0000)
+  .drawRect(0, 0, 100, 140);
+statsPanel.addChild(statsPanelBg);
+hudContainer.addChild(statsPanel);
+statsPanel.position = {x:80, y:-100};
+
+const statsText = new PIXI.Text("Lanka", styly);
+const drawStats = (textBox: PIXI.Text, entity:HexGridEntity) => {
+  textBox.text = Object.entries(entity.stats).map(([k,v])=>`${k} ${v}`).join("\n");
+}
+drawStats(statsText, team[cur]);
+statsPanel.addChild(statsText);
+
 // TODO make path prettier
