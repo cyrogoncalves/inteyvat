@@ -1,3 +1,4 @@
+import {OutlineFilter} from '@pixi/filter-outline';
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import {vertexesFor} from "./omastar";
@@ -222,5 +223,34 @@ window.addEventListener("keydown", event => {
   const delta = moveMap[event.key]
   if (delta) move({q:team[cur].hex.q + delta[0], r:team[cur].hex.r + delta[1]}, team);
 }, false);
+
+
+const hudContainer = new PIXI.Container();
+hudContainer.position = {x:100, y:500};
+app.stage.addChild(hudContainer);
+
+const hudHex = new PIXI.Graphics();
+hudHex.beginFill(0x000000, .5).drawPolygon(hex.vertexesFor({x:0, y:0}, 72)).endFill();
+hudContainer.addChild(hudHex);
+
+const hudPortrait = PIXI.Sprite.from("assets/lanka.png");
+hudPortrait.anchor.set(.5);
+hudContainer.addChild(hudPortrait);
+hudPortrait.filters = [new OutlineFilter(3, 0xffffff)];
+
+const hudHealthBar = new PIXI.Graphics();
+hudContainer.addChild(hudHealthBar);
+const drawHudHealthBar = (healthBar: PIXI.Graphics, entity:HexGridEntity, size=28) =>
+  healthBar.clear()
+    .lineStyle(6, 0x95d586, .8).lineTo(entity.stats.hp*size, 0)
+    .lineStyle(6, 0x888888, .8).lineTo(entity.stats.endurance*size, 0);
+drawHudHealthBar(hudHealthBar, team[cur], 14);
+hudHealthBar.position = {x:-50, y:64};
+
+const styly = new PIXI.TextStyle({fill:"#ffffff", fontSize:18});
+const texty = new PIXI.Text("Lanka", styly);
+texty.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
+texty.position = {x:-42, y:46};
+hudContainer.addChild(texty);
 
 // TODO make path prettier
