@@ -12,6 +12,7 @@ const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color
   points.forEach(p => path.lineTo(p.x, p.y));
 }
 
+// TODO make path prettier
 const drawPath = (path: hex.Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointData) => {
   realPath.clear().lineStyle(2, 0xFFFFFF).moveTo(x, y);
   path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
@@ -19,7 +20,7 @@ const drawPath = (path: hex.Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointDa
 
 const app = new PIXI.Application({
   view: document.getElementById("pixi-hex-grid") as HTMLCanvasElement,
-  width: 1000, height: 600,
+  width: 800, height: 600,
   backgroundColor: 0x1099bb,
   resolution: window.devicePixelRatio || 1,
   autoDensity: true,
@@ -41,15 +42,6 @@ for (let q = 0; q < 17; q++) {
       .lineTo(v[1].x, v[1].y).lineTo(v[2].x, v[2].y);
   }
 }
-
-const inventory = new PIXI.Container();
-Object.assign(inventory, { x:800, y:0, width:200, height:600 });
-app.stage.addChild(inventory);
-inventory.interactive = true;
-inventory.hitArea = new PIXI.Rectangle(0, 0, 200, 600);
-inventory.on('pointerdown', ev => {
-  console.log(`Inventory click! x:${ev.data.x} y:${ev.data.y}`);
-})
 
 let path = null;
 const realPath = new PIXI.Graphics();
@@ -131,7 +123,7 @@ drawHealthBar(healthBar, team[cur]);
 
 [ // loot on map
   {hex: {q:8,r:5}, name:"Gladiator's Nostalgia.png"},
-  {hex: {q:5,r:6}, name:"Royal Masque.png"},
+  {hex: {q:4,r:4}, name:"Royal Masque.png"},
   {hex: {q:5,r:7}, name:"Royal Masque.png"},
   {hex: {q:9,r:7}, name:"Royal Masque.png"},
   {hex: {q:1,r:9}, name:"Viridescent Arrow Feather.png"},
@@ -177,12 +169,12 @@ const tickers = [
       } else {
         loot.push(goalEntity);
         entities.splice(entities.findIndex(it=>hex.sameCell(it.hex, goalEntity.hex)), 1);
-        console.log("pick!", entities);
+        console.log("pick!", loot);
         container.removeChild(goalEntity.sprite);
-        inventory.addChild(goalEntity.sprite);
-        goalEntity.hex.q = 1 + loot.length%2;
-        goalEntity.hex.r = 1 + Math.floor(loot.length/2);
-        updatePos(loot);
+        inventoryPanel.addChild(goalEntity.sprite);
+        goalEntity.sprite.x = 20 + 100 * ((loot.length-1)%2);
+        goalEntity.sprite.y = 20 + 50 * Math.floor((loot.length-1)/2);
+        // updatePos(loot);
         realPath.clear();
       }
       selectedHexPath.clear();
@@ -267,6 +259,14 @@ const drawStats = (textBox: PIXI.Text, entity:HexGridEntity) => {
   textBox.text = Object.entries(entity.stats).map(([k,v])=>`${k} ${v}`).join("\n");
 }
 drawStats(statsText, team[cur]);
+statsText.position = {x:5, y:5};
 statsPanel.addChild(statsText);
 
-// TODO make path prettier
+const inventoryPanel = new PIXI.Container();
+const inventoryPanelBg = new PIXI.Graphics();
+inventoryPanelBg.beginFill(0x555500)
+  .lineStyle(5, 0xFF0000)
+  .drawRect(0, 0, 220, 140);
+inventoryPanel.addChild(inventoryPanelBg);
+hudContainer.addChild(inventoryPanel);
+inventoryPanel.position = {x:190, y:-100};
