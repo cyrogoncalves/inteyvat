@@ -247,15 +247,15 @@ const drawHudHealthBar = (healthBar: PIXI.Graphics, entity:HexGridEntity, size=2
 drawHudHealthBar(hudHealthBar, team[cur], 14);
 hudHealthBar.position = {x:-50, y:64};
 
-const styly = new PIXI.TextStyle({fill:"#ffffff", fontSize:18});
+const styly = new PIXI.TextStyle({fill:"#ffffff", fontSize:24, fontFamily: "ff6"});
 const texty = new PIXI.Text("Lanka", styly);
 texty.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
-texty.position = {x:-42, y:46};
+texty.position = {x:-42, y:44};
 hudContainer.addChild(texty);
 
 const statsPanel = new PIXI.Container();
 const statsPanelBg = new PIXI.Graphics();
-statsPanelBg.beginFill(0xFFFF00)
+statsPanelBg.beginFill(0x555500)
   .lineStyle(5, 0xFF0000)
   .drawRect(0, 0, 100, 140);
 statsPanel.addChild(statsPanelBg);
