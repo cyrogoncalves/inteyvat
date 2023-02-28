@@ -2,11 +2,11 @@ import {OutlineFilter} from '@pixi/filter-outline';
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
-import {vertexesFor} from "./omastar";
+import * as stats from "./stats";
 
 type Stats = { hp:number, endurance:number }
 type Avatar = { name:string, stats:Stats }
-export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, avatar?: Avatar, hudPortrait?: PIXI.Sprite }
+export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, avatar?: Avatar, hudPortrait?: PIXI.Sprite, artifact? }
 
 const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
   const points = hex.vertexesFor(point);
@@ -39,7 +39,7 @@ gridOutline.lineStyle(2, 0xFFFFFF, .1);
 container.addChild(gridOutline);
 for (let q = 0; q < 17; q++) {
   for (let r = 0; r < 15; r++) {
-    const v = vertexesFor(hex.toCenterPixel({q: q - (r - (r & 1)) / 2, r}));
+    const v = hex.vertexesFor(hex.toCenterPixel({q: q - (r - (r & 1)) / 2, r}));
     gridOutline.moveTo(v[5].x, v[5].y).lineTo(v[0].x, v[0].y)
       .lineTo(v[1].x, v[1].y).lineTo(v[2].x, v[2].y);
   }
@@ -136,15 +136,20 @@ team.forEach(t => {
 });
 drawHealthBar(healthBar, team[cur]);
 
+const generateArtifact = (hex, type, name) => ({
+  hex,
+  artifact: {name, mods: stats.generateArtifactMods(type)},
+  sprite: PIXI.Sprite.from(`./assets/${name}`)
+})
+
+const loot = [];
 [ // loot on map
-  {hex: {q:8,r:5}, name:"Gladiator's Nostalgia.png"},
-  {hex: {q:4,r:4}, name:"Royal Masque.png"},
-  {hex: {q:5,r:7}, name:"Royal Masque.png"},
-  {hex: {q:9,r:7}, name:"Royal Masque.png"},
-  {hex: {q:1,r:9}, name:"Viridescent Arrow Feather.png"},
-].map(({hex, name}) =>
-  ({ hex, sprite: PIXI.Sprite.from(`./assets/${name}`) }))
-  .forEach(it => addToContainer(it));
+  generateArtifact({q:8,r:5}, "flower", "Gladiator's Nostalgia.png"),
+  generateArtifact({q:4,r:4}, "circlet", "Royal Masque.png"),
+  generateArtifact({q:5,r:7}, "circlet", "Royal Masque.png"),
+  generateArtifact({q:9,r:7}, "circlet", "Royal Masque.png"),
+  generateArtifact({q:1,r:9}, "plume", "Viridescent Arrow Feather.png"),
+].forEach(it => addToContainer(it));
 
 // enemies
 const enemies: HexGridEntity[] = [];
@@ -158,8 +163,6 @@ for (let i = 0; i < 5; i++) {
   enemies.push(hilixu);
   addToContainer(hilixu)
 }
-
-const loot = [];
 
 const updatePos = (it) => {
   it.forEach(t => t.sprite.position = hex.toCenterPixel(t.hex));

@@ -8,17 +8,28 @@ export type StatType = typeof mainStatNames[number];
 
 type Stats = { [stat:number]: {value:number} }
 
-type ArtifactType = "flower" | "plume" | "sands" | "goblet" | "circlet";
+const artifactTypeNames = ["flower", "plume", "sands", "goblet", "circlet"] as const;
+type ArtifactType = typeof artifactTypeNames[number];
 
-const mainStatPoolMap/*: { [art:ArtifactType]: StatType[] }*/ = {
+const mainStatPoolMap: { [art in ArtifactType]: StatType[] } = {
   "flower": ["VIT"],
   "plume": ["STR"],
-  "sands": ["STR", "VIT", "DEF"],
-  "goblet": ["STR", "VIT", "DEF"],
-  "circlet": ["STR", "VIT", "DEF", "CR", "CD"],
+  "sands": ["STR", "VIT", "DEF", "EM", "ER"],
+  "goblet": ["STR", "VIT", "DEF", "EM", ...elementNames, "physical"],
+  "circlet": ["STR", "VIT", "DEF", "EM", "CR", "CD"],
 }
 
-const generateArtifactMods = (type: ArtifactType, rng): Stats => {
-  const mainStat = rng.get(mainStatPoolMap[type]);
-  const substats
+const RNG = {
+  select: (arr) => arr[Math.floor(Math.random()*arr.length)]
 }
+
+// export const generateArtifact = (type: ArtifactType, rng=RNG)
+
+export const generateArtifactMods = (
+  type: ArtifactType,
+  rng=RNG
+): Stats => ({
+  [rng.select(mainStatPoolMap[type])]: {value: 1},
+  [rng.select(subStatNames)]: {value: 0},
+  [rng.select(subStatNames)]: {value: 0},
+})
