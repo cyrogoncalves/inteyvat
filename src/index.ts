@@ -4,7 +4,8 @@ import * as hex from "./omastar";
 import {vertexesFor} from "./omastar";
 
 type Stats = { hp:number, endurance:number }
-export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, stats: Stats }
+type Avatar = { name:string, stats:Stats }
+export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, avatar?: Avatar, hudPortrait?: PIXI.Sprite }
 
 const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
   const points = hex.vertexesFor(point);
@@ -55,7 +56,8 @@ container.addChild(curHexPath);
 const healthBar = new PIXI.Graphics();
 container.addChild(healthBar);
 const drawHealthBar = (healthBar, entity:HexGridEntity) => {
-  const x = -28*.6 + entity.stats.hp / entity.stats.endurance * 28*2*.6;
+  const stats = entity.avatar.stats;
+  const x = -28*.6 + stats.hp / stats.endurance * 28*2*.6;
   healthBar.clear().moveTo(-28*.6, 28)
     .lineStyle(4, 0x95d586, .8).lineTo(x, 28)
     .lineStyle(4, 0x888888, .8).lineTo(28*.6, 28);
@@ -83,6 +85,7 @@ container.on('pointerdown', ev => {
     goalEntity = null;
     selectedHexPath.clear();
     realPath.clear();
+    drawHud(team[cur]);
     return;
   }
 
@@ -95,7 +98,7 @@ container.on('pointerdown', ev => {
 });
 
 const entities: HexGridEntity[] = [];
-const addToContainer = (it, scale=null) => {
+const addToContainer = (it:HexGridEntity, scale=null) => {
   it.sprite.anchor.set(0.5);
   it.sprite.texture.baseTexture.on('loaded', () =>
     it.sprite.scale.set(scale || hex.SIZE * Math.sqrt(3) / it.sprite.height));
@@ -103,19 +106,30 @@ const addToContainer = (it, scale=null) => {
   entities.push(it);
 }
 
-const newEntity = (hex: hex.Hex, sourceImg: string): HexGridEntity => ({
-  hex,
-  stats: { hp:10, endurance:10 },
-  sprite: PIXI.Sprite.from(sourceImg)
-})
-
-const team: HexGridEntity[] = [
-  { hex: { q:2, r:3 }, stats:{ hp:10, endurance:10 }, sprite: PIXI.Sprite.from("assets/lanka.png") },
-  { hex: { q:3, r:3 }, stats:{ hp:9, endurance:10 }, sprite: PIXI.Sprite.from("assets/tartartaglia.png") },
-  { hex: { q:4, r:3 }, stats:{ hp:8, endurance:10 }, sprite: PIXI.Sprite.from("assets/morax.png") },
-  { hex: { q:5, r:3 }, stats:{ hp:7, endurance:10 }, sprite: PIXI.Sprite.from("assets/walnut.png") },
-];
+const team: HexGridEntity[] = [{
+  hex: { q:2, r:3 },
+  avatar: { name: "Lanka", stats:{ hp:10, endurance:10 } },
+  sprite: PIXI.Sprite.from("assets/lanka.png"),
+  hudPortrait: PIXI.Sprite.from("assets/lanka.png")
+}, {
+  hex: { q:3, r:3 },
+  avatar: { name: "Tartaglia", stats:{ hp:9, endurance:10 } },
+  sprite: PIXI.Sprite.from("assets/tartartaglia.png"),
+  hudPortrait: PIXI.Sprite.from("assets/tartartaglia.png")
+}, {
+  hex: { q:4, r:3 },
+  avatar: { name: "Zhongli", stats:{ hp:8, endurance:10 } },
+  sprite: PIXI.Sprite.from("assets/morax.png"),
+  hudPortrait: PIXI.Sprite.from("assets/morax.png")
+}, {
+  hex: { q:5, r:3 },
+  avatar: { name: "Hu Tao", stats:{ hp:7, endurance:10 } },
+  sprite: PIXI.Sprite.from("assets/walnut.png"),
+  hudPortrait: PIXI.Sprite.from("assets/walnut.png")
+}];
 team.forEach(t => {
+  t.hudPortrait.anchor.set(.5);
+  t.hudPortrait.filters = [new OutlineFilter(3, 0xffffff)];
   t.sprite.rotation = 0.06;
   addToContainer(t)
 });
@@ -128,13 +142,16 @@ drawHealthBar(healthBar, team[cur]);
   {hex: {q:9,r:7}, name:"Royal Masque.png"},
   {hex: {q:1,r:9}, name:"Viridescent Arrow Feather.png"},
 ].map(({hex, name}) =>
-  newEntity(hex, `./assets/${name}`))
+  ({ hex, sprite: PIXI.Sprite.from(`./assets/${name}`) }))
   .forEach(it => addToContainer(it));
 
 // enemies
 const enemies: HexGridEntity[] = [];
 for (let i = 0; i < 5; i++) {
-  const hilixu = newEntity({q:9-i,r:5+(i*4)%9}, `./assets/hilixu.png`);
+  const hilixu = {
+    hex: {q:9-i,r:5+(i*4)%9},
+    sprite: PIXI.Sprite.from("./assets/hilixu.png")
+  };
   hilixu.sprite.rotation = 0.06
   hilixu.sprite.tint = 0x89da86;
   enemies.push(hilixu);
@@ -163,7 +180,7 @@ const tickers = [
       } else if (enemies.includes(goalEntity)) {
         console.log("fight!");
         container.removeChild(goalEntity.sprite);
-        team[cur].stats.hp -= 4;
+        team[cur].avatar.stats.hp -= 4;
         drawHealthBar(healthBar, team[cur]);
         realPath.clear();
       } else {
@@ -222,25 +239,20 @@ hudContainer.position = {x:100, y:500};
 app.stage.addChild(hudContainer);
 
 const hudHex = new PIXI.Graphics();
-hudHex.beginFill(0x000000, .5).drawPolygon(hex.vertexesFor({x:0, y:0}, 72)).endFill();
+hudHex.beginFill(0x000000, .5)
+  .drawPolygon(hex.vertexesFor({x:0, y:0}, 72))
+  .endFill();
 hudContainer.addChild(hudHex);
 
-const hudPortrait = PIXI.Sprite.from("assets/lanka.png");
-hudPortrait.anchor.set(.5);
-hudContainer.addChild(hudPortrait);
-hudPortrait.filters = [new OutlineFilter(3, 0xffffff)];
+const hudPortraitContainer = new PIXI.Container();
+hudContainer.addChild(hudPortraitContainer);
 
 const hudHealthBar = new PIXI.Graphics();
 hudContainer.addChild(hudHealthBar);
-const drawHudHealthBar = (healthBar: PIXI.Graphics, entity:HexGridEntity, size=28) =>
-  healthBar.clear()
-    .lineStyle(6, 0x95d586, .8).lineTo(entity.stats.hp*size, 0)
-    .lineStyle(6, 0x888888, .8).lineTo(entity.stats.endurance*size, 0);
-drawHudHealthBar(hudHealthBar, team[cur], 14);
 hudHealthBar.position = {x:-50, y:64};
 
 const styly = new PIXI.TextStyle({fill:"#ffffff", fontSize:24, fontFamily: "ff6"});
-const texty = new PIXI.Text("Lanka", styly);
+const texty = new PIXI.Text("", styly);
 texty.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
 texty.position = {x:-42, y:44};
 hudContainer.addChild(texty);
@@ -254,11 +266,7 @@ statsPanel.addChild(statsPanelBg);
 hudContainer.addChild(statsPanel);
 statsPanel.position = {x:80, y:-100};
 
-const statsText = new PIXI.Text("Lanka", styly);
-const drawStats = (textBox: PIXI.Text, entity:HexGridEntity) => {
-  textBox.text = Object.entries(entity.stats).map(([k,v])=>`${k} ${v}`).join("\n");
-}
-drawStats(statsText, team[cur]);
+const statsText = new PIXI.Text("", styly);
 statsText.position = {x:5, y:5};
 statsPanel.addChild(statsText);
 
@@ -270,3 +278,19 @@ inventoryPanelBg.beginFill(0x555500)
 inventoryPanel.addChild(inventoryPanelBg);
 hudContainer.addChild(inventoryPanel);
 inventoryPanel.position = {x:190, y:-100};
+
+const drawHud = (
+  entity:HexGridEntity,
+  healthBar: PIXI.Graphics=hudHealthBar,
+  size=hex.SIZE
+): void => {
+  const avatar = entity.avatar;
+  hudPortraitContainer.removeChildren();
+  hudPortraitContainer.addChild(entity.hudPortrait);
+  healthBar.clear()
+    .lineStyle(6, 0x95d586, .8).lineTo(avatar.stats.hp*size/2, 0)
+    .lineStyle(6, 0x888888, .8).lineTo(avatar.stats.endurance*size/2, 0);
+  texty.text = avatar.name;
+  statsText.text = Object.entries(avatar.stats).map(([k,v])=>`${k} ${v}`).join("\n");
+}
+drawHud(team[cur]);
