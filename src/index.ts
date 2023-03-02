@@ -3,10 +3,8 @@ import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
 import * as stats from "./stats";
-import {addEquip, drawHud} from "./hud";
 
-type Stats = { hp:number, endurance:number }
-type Avatar = { name:string, stats:Stats }
+type Avatar = { name:string, stats:stats.Stats }
 export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, avatar?: Avatar, hudPortrait?: PIXI.Sprite, artifact? }
 
 const drawHex = (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
@@ -59,7 +57,7 @@ const healthBar = new PIXI.Graphics();
 container.addChild(healthBar);
 const drawHealthBar = (healthBar, entity:HexGridEntity) => {
   const stats = entity.avatar.stats;
-  const x = -28*.6 + stats.hp / stats.endurance * 28*2*.6;
+  const x = -28*.6 + stats.hp.value / stats.vit.value * 28*2*.6;
   healthBar.clear().moveTo(-28*.6, 28)
     .lineStyle(4, 0x95d586, .8).lineTo(x, 28)
     .lineStyle(4, 0x888888, .8).lineTo(28*.6, 28);
@@ -110,22 +108,22 @@ const addToContainer = (it:HexGridEntity, scale=null) => {
 
 const team: HexGridEntity[] = [{
   hex: { q:2, r:3 },
-  avatar: { name: "Lanka", stats:{ hp:10, endurance:10 } },
+  avatar: { name: "Lanka", stats:{ hp: { value:10 }, ...stats.statsFor([]) } },
   sprite: PIXI.Sprite.from("assets/lanka.png"),
   hudPortrait: PIXI.Sprite.from("assets/lanka.png")
 }, {
   hex: { q:3, r:3 },
-  avatar: { name: "Tartaglia", stats:{ hp:9, endurance:10 } },
+  avatar: { name: "Tartaglia", stats:{ hp: { value:9 }, ...stats.statsFor([]) } },
   sprite: PIXI.Sprite.from("assets/tartartaglia.png"),
   hudPortrait: PIXI.Sprite.from("assets/tartartaglia.png")
 }, {
   hex: { q:4, r:3 },
-  avatar: { name: "Zhongli", stats:{ hp:8, endurance:10 } },
+  avatar: { name: "Zhongli", stats:{ hp: { value:8 }, ...stats.statsFor([]) } },
   sprite: PIXI.Sprite.from("assets/morax.png"),
   hudPortrait: PIXI.Sprite.from("assets/morax.png")
 }, {
   hex: { q:5, r:3 },
-  avatar: { name: "Hu Tao", stats:{ hp:7, endurance:10 } },
+  avatar: { name: "Hu Tao", stats:{ hp: { value:7 }, ...stats.statsFor([]) } },
   sprite: PIXI.Sprite.from("assets/walnut.png"),
   hudPortrait: PIXI.Sprite.from("assets/walnut.png")
 }];
@@ -185,9 +183,9 @@ const tickers = [
       } else if (enemies.includes(goalEntity)) {
         console.log("fight!");
         container.removeChild(goalEntity.sprite);
-        team[cur].avatar.stats.hp -= 4;
+        team[cur].avatar.stats.hp.value -= 4;
         drawHealthBar(healthBar, team[cur]);
-        hud.drawHud(team[cur])
+        hud.drawHud(team[cur]);
         realPath.clear();
       } else {
         loot.push(goalEntity);
@@ -195,6 +193,8 @@ const tickers = [
         console.log("pick!", loot);
         container.removeChild(goalEntity.sprite);
         hud.addEquip(goalEntity);
+        team[cur].avatar.stats = stats.statsFor([goalEntity.artifact.mods], team[cur].avatar.stats);
+        hud.drawHud(team[cur]);
         // updatePos(loot);
         realPath.clear();
       }

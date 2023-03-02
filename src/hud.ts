@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import {OutlineFilter} from "@pixi/filter-outline";
-import {equipTypeNames} from "./stats";
+import {equipTypeNames, Stats} from "./stats";
 
 export const hudContainer = new PIXI.Container();
 
@@ -46,9 +46,9 @@ inventoryPanel.addChild(inventoryPanelBg);
 hudContainer.addChild(inventoryPanel);
 inventoryPanel.position = {x:190, y:-100};
 
-export const drawHealthBar = (stats, size=hex.SIZE/2) => hudHealthBar.clear()
-  .lineStyle(6, 0x95d586, .8).lineTo(stats.hp * size, 0)
-  .lineStyle(6, 0x888888, .8).lineTo(stats.endurance * size, 0);
+export const drawHealthBar = (stats: Stats, size=hex.SIZE/2) => hudHealthBar.clear()
+  .lineStyle(6, 0x95d586, .8).lineTo(stats.hp.value * size, 0)
+  .lineStyle(6, 0x888888, .8).lineTo(stats.vit.value * size, 0);
 
 export const drawHud = (entity): void => {
   const avatar = entity.avatar;
@@ -57,12 +57,12 @@ export const drawHud = (entity): void => {
   drawHealthBar(avatar.stats);
   texty.text = avatar.name;
   statsText.text = Object.entries(avatar.stats)
-    .map(([k,v])=>`${k} ${v}`).join("\n");
+    .map(([k,v]: any[])=>`${k} ${v.value}`).join("\n").toUpperCase();
 }
 
 const modDisplayFor = mods => mods
   .filter(([_,v]: any[]) => v.value > 0)
-  .map(([k,v]: any[]) => `${k} +${v.value}`.toUpperCase()).join("\n");
+  .map(([k,v]: any[]) => `${k} +${v.value}`).join("\n").toUpperCase();
 
 const subStatsStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:16, fontFamily: "ff6"});
 

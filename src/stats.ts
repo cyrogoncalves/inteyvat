@@ -6,7 +6,7 @@ export type SubStatType = typeof subStatNames[number];
 export const mainStatNames = [...subStatNames, "healing", ...elementNames, "physical"] as const;
 export type StatType = typeof mainStatNames[number];
 
-type Stats = { [stat:number]: {value:number} }
+export type Stats = { [stat in string]: {value:number} }
 
 export const equipTypeNames = ["weapon", "flower", "plume", "sands", "goblet", "circlet"] as const;
 type EquipType = typeof equipTypeNames[number];
@@ -34,3 +34,22 @@ export const generateArtifactMods = (
   [rng.select(subStatNames)]: {value: 0},
   [rng.select(subStatNames)]: {value: 0},
 })
+
+const base: Stats = {
+  vit: { value:10 },
+  str: { value:1 },
+  def: { value:0 },
+  em: { value:1 },
+  er: { value:1 },
+  cr: { value:1 },
+  cd: { value:15 },
+};
+
+export const statsFor = (mods: Stats[], from: Stats = { ...base }) => {
+  mods.forEach(mod => {
+    const [[k, { value }]] = Object.entries(mod);
+    if (!from[k]) from[k] = { value:0 };
+    from[k].value += value;
+  });
+  return from;
+}
