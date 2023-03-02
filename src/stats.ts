@@ -1,22 +1,23 @@
 const elementNames = ["anemo", "pyro", "hydro", "cryo", "electro", "geo", "dendro"] as const;
 
-export const subStatNames = ["VIT", "STR", "DEF", "EM", "ER", "CD", "CR"] as const;
+export const subStatNames = ["vit", "str", "def", "em", "er", "cd", "cr"] as const;
 export type SubStatType = typeof subStatNames[number];
 
-export const mainStatNames = [...subStatNames, "Healing", ...elementNames, "physical"] as const;
+export const mainStatNames = [...subStatNames, "healing", ...elementNames, "physical"] as const;
 export type StatType = typeof mainStatNames[number];
 
 type Stats = { [stat:number]: {value:number} }
 
-const artifactTypeNames = ["flower", "plume", "sands", "goblet", "circlet"] as const;
-type ArtifactType = typeof artifactTypeNames[number];
+export const equipTypeNames = ["weapon", "flower", "plume", "sands", "goblet", "circlet"] as const;
+type EquipType = typeof equipTypeNames[number];
 
-const mainStatPoolMap: { [art in ArtifactType]: StatType[] } = {
-  "flower": ["VIT"],
-  "plume": ["STR"],
-  "sands": ["STR", "VIT", "DEF", "EM", "ER"],
-  "goblet": ["STR", "VIT", "DEF", "EM", ...elementNames, "physical"],
-  "circlet": ["STR", "VIT", "DEF", "EM", "CR", "CD"],
+const mainStatPoolMap: { [e in EquipType]: StatType[] } = {
+  "weapon": [],
+  "flower": ["vit"],
+  "plume": ["str"],
+  "sands": ["str", "vit", "def", "em", "er"],
+  "goblet": ["str", "vit", "def", "em", ...elementNames, "physical"],
+  "circlet": ["str", "vit", "def", "em", "cr", "cd"],
 }
 
 const RNG = {
@@ -26,7 +27,7 @@ const RNG = {
 // export const generateArtifact = (type: ArtifactType, rng=RNG)
 
 export const generateArtifactMods = (
-  type: ArtifactType,
+  type: EquipType,
   rng=RNG
 ): Stats => ({
   [rng.select(mainStatPoolMap[type])]: {value: 1},

@@ -3,6 +3,7 @@ import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
 import * as stats from "./stats";
+import {addEquip} from "./hud";
 
 type Stats = { hp:number, endurance:number }
 type Avatar = { name:string, stats:Stats }
@@ -138,7 +139,7 @@ drawHealthBar(healthBar, team[cur]);
 
 const generateArtifact = (hex, type, name) => ({
   hex,
-  artifact: {name, mods: stats.generateArtifactMods(type)},
+  artifact: {name, type, mods: stats.generateArtifactMods(type)},
   sprite: PIXI.Sprite.from(`./assets/${name}`)
 })
 
@@ -192,9 +193,7 @@ const tickers = [
         entities.splice(entities.findIndex(it=>hex.sameCell(it.hex, goalEntity.hex)), 1);
         console.log("pick!", loot);
         container.removeChild(goalEntity.sprite);
-        hud.inventoryPanel.addChild(goalEntity.sprite);
-        goalEntity.sprite.x = 20 + 100 * ((loot.length-1)%2);
-        goalEntity.sprite.y = 20 + 50 * Math.floor((loot.length-1)/2);
+        hud.addEquip(goalEntity);
         // updatePos(loot);
         realPath.clear();
       }
