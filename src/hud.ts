@@ -32,7 +32,6 @@ statsPanelBg.beginFill(0x555500)
 statsPanel.addChild(statsPanelBg);
 hudContainer.addChild(statsPanel);
 statsPanel.position = {x:80, y:-100};
-
 const statsText = new PIXI.Text("", styly);
 statsText.position = {x:5, y:5};
 statsPanel.addChild(statsText);
@@ -77,4 +76,9 @@ export const addEquip = (art, pos: number = equipTypeNames.indexOf(art.artifact.
   const subStatsText = new PIXI.Text(modDisplayFor(sub), subStatsStyle);
   subStatsText.position = {x: statsText.x, y: 20 + statsText.y};
   inventoryPanel.addChild(subStatsText);
+}
+
+export const toggleHud = () => {
+  statsPanel.visible = !statsPanel.visible
+  inventoryPanel.visible = !inventoryPanel.visible
 }

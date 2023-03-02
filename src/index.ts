@@ -71,27 +71,33 @@ container.addChild(selectedHexPath);
 
 let moveCount = 0;
 
+const changeSelectedChar = (charIdx) => {
+  cur = charIdx;
+  curHexPath.position = team[cur].sprite;
+  drawHealthBar(healthBar, team[cur]);
+  healthBar.position = team[cur].sprite;
+  goalEntity = null;
+  selectedHexPath.clear();
+  realPath.clear();
+  hud.drawHud(team[cur]);
+}
+
 container.on('pointerdown', ev => {
   const newGoal = hex.from(ev.data.x, ev.data.y);
-  if (hex.sameCell(goal, newGoal)) return (follow = true); // second click on goal
+  const charIdx = team.findIndex(it => hex.sameCell(newGoal, it.hex));
+  // console.log("click", { cur, charIdx, goalEntity });
+
+  if (charIdx === cur)
+    return hud.toggleHud();
+  else if (charIdx >= 0)
+    return changeSelectedChar(charIdx);
+  else if (hex.sameCell(goal, newGoal))
+    return (follow = true); // second click on goal
+
   goal = newGoal;
   goalEntity = entities.find(it => hex.sameCell(goal, it.hex));
-
-  if (team.includes(goalEntity)) { // clicked on a char
-    cur = team.findIndex(c => c === goalEntity);
-    curHexPath.position = team[cur].sprite;
-    drawHealthBar(healthBar, team[cur]);
-    healthBar.position = team[cur].sprite;
-    goalEntity = null;
-    selectedHexPath.clear();
-    realPath.clear();
-    hud.drawHud(team[cur]);
-    return;
-  }
-
   const obstacles = entities.filter(it=>it!==goalEntity).map(t=>t.hex);
   path = hex.omastar(team[cur].hex, goal, obstacles);
-
   const color = goalEntity ? 0xFF6666 : 0xFFFF66;
   drawHex(selectedHexPath, hex.toCenterPixel(goal), color);
   drawPath(path, realPath, team[cur].sprite);
