@@ -46,19 +46,23 @@ inventoryPanel.addChild(inventoryPanelBg);
 hudContainer.addChild(inventoryPanel);
 inventoryPanel.position = {x:190, y:-100};
 
-export const drawHud = (entity, size=hex.SIZE): void => {
+export const drawHealthBar = (stats, size=hex.SIZE/2) => hudHealthBar.clear()
+  .lineStyle(6, 0x95d586, .8).lineTo(stats.hp * size, 0)
+  .lineStyle(6, 0x888888, .8).lineTo(stats.endurance * size, 0);
+
+export const drawHud = (entity): void => {
   const avatar = entity.avatar;
   hudPortraitContainer.removeChildren();
   hudPortraitContainer.addChild(entity.hudPortrait);
-  hudHealthBar.clear()
-    .lineStyle(6, 0x95d586, .8).lineTo(avatar.stats.hp*size/2, 0)
-    .lineStyle(6, 0x888888, .8).lineTo(avatar.stats.endurance*size/2, 0);
+  drawHealthBar(avatar.stats);
   texty.text = avatar.name;
-  statsText.text = Object.entries(avatar.stats).map(([k,v])=>`${k} ${v}`).join("\n");
+  statsText.text = Object.entries(avatar.stats)
+    .map(([k,v])=>`${k} ${v}`).join("\n");
 }
 
-const modDisplayFor = mods => mods.map(([k,v]: any[]) =>
-  `${k} +${v.value}`.toUpperCase()).join("\n");
+const modDisplayFor = mods => mods
+  .filter(([_,v]: any[]) => v.value > 0)
+  .map(([k,v]: any[]) => `${k} +${v.value}`.toUpperCase()).join("\n");
 
 const subStatsStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:16, fontFamily: "ff6"});
 

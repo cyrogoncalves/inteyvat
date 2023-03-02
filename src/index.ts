@@ -3,7 +3,7 @@ import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
 import * as stats from "./stats";
-import {addEquip} from "./hud";
+import {addEquip, drawHud} from "./hud";
 
 type Stats = { hp:number, endurance:number }
 type Avatar = { name:string, stats:Stats }
@@ -187,6 +187,7 @@ const tickers = [
         container.removeChild(goalEntity.sprite);
         team[cur].avatar.stats.hp -= 4;
         drawHealthBar(healthBar, team[cur]);
+        hud.drawHud(team[cur])
         realPath.clear();
       } else {
         loot.push(goalEntity);
