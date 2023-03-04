@@ -36,7 +36,7 @@ const statsText = new PIXI.Text("", styly);
 statsText.position = {x:5, y:5};
 statsPanel.addChild(statsText);
 
-export const inventoryPanel = new PIXI.Container();
+const inventoryPanel = new PIXI.Container();
 const inventoryPanelBg = new PIXI.Graphics();
 inventoryPanelBg.beginFill(0x555500)
   .lineStyle(5, 0xFF0000)
@@ -59,23 +59,20 @@ export const drawHud = (entity): void => {
     .map(([k,v]: any[])=>`${k} ${v.value}`).join("\n").toUpperCase();
 }
 
-const modDisplayFor = mods => mods
-  .filter(([_,v]: any[]) => v.value > 0)
+const modDisplayFor = mods => mods.filter(([_,v]: any[]) => v.value > 0)
   .map(([k,v]: any[]) => `${k} +${v.value}`).join("\n").toUpperCase();
 
 const subStatsStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:16, fontFamily: "ff6"});
 
 export const addEquip = (art, pos: number = equipTypeNames.indexOf(art.artifact.type)): void => {
-  inventoryPanel.addChild(art.sprite);
   art.sprite.x = 20 + 100 * Math.floor(pos / 3);
   art.sprite.y = 20 + 50 * (pos % 3);
   const [main, ...sub] = Object.entries(art.artifact.mods);
   const statsText = new PIXI.Text(modDisplayFor([main]), styly);
   statsText.position = {x: 28 + art.sprite.x, y: art.sprite.y - 14};
-  inventoryPanel.addChild(statsText);
   const subStatsText = new PIXI.Text(modDisplayFor(sub), subStatsStyle);
   subStatsText.position = {x: statsText.x, y: 20 + statsText.y};
-  inventoryPanel.addChild(subStatsText);
+  inventoryPanel.addChild(art.sprite, statsText, subStatsText);
 }
 
 export const toggleHud = () => {

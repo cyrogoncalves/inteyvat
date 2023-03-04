@@ -9,7 +9,7 @@ export type StatType = typeof mainStatNames[number];
 export type Stats = { [stat in string]: {value:number} }
 
 export const equipTypeNames = ["weapon", "flower", "plume", "sands", "goblet", "circlet"] as const;
-type EquipType = typeof equipTypeNames[number];
+export type EquipType = typeof equipTypeNames[number];
 
 const mainStatPoolMap: { [e in EquipType]: StatType[] } = {
   "weapon": [],
