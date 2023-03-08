@@ -1,25 +1,29 @@
-import {OutlineFilter} from '@pixi/filter-outline';
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
 import * as stats from "./stats";
 
 
-type Avatar = { name:string, stats:stats.Stats, slug:string }
-export type HexGridEntity = { hex: hex.Hex, sprite: PIXI.Sprite, avatar?: Avatar, hudPortrait?: PIXI.Sprite, artifact? }
+type Avatar = { name:string, stats:stats.Stats, slug:string, equips:Equip[] }
+type Equip = { name:string, type:stats.EquipType, mods:stats.Stats }
+export type HexGridEntity = {
+  hex: hex.Hex,
+  sprite: PIXI.Sprite,
+  avatar?: Avatar,
+  artifact?: Equip
+}
 
 
 const avatars: Avatar[] = [
-  { name: "Lanka", stats:{ hp: { value:10 }, ...stats.statsFor([]) }, slug: "lanka" },
-  { name: "Tartaglia", stats:{ hp: { value:9 }, ...stats.statsFor([]) }, slug: "tartartaglia" },
-  { name: "Zhongli", stats:{ hp: { value:8 }, ...stats.statsFor([]) }, slug: "morax" },
-  { name: "Hu Tao", stats:{ hp: { value:7 }, ...stats.statsFor([]) }, slug: "walnut" },
+  { name: "Lanka", stats:{ hp: { value:10 }, ...stats.statsFor([]) }, slug: "lanka", equips:[] },
+  { name: "Tartaglia", stats:{ hp: { value:9 }, ...stats.statsFor([]) }, slug: "tartartaglia", equips:[] },
+  { name: "Zhongli", stats:{ hp: { value:8 }, ...stats.statsFor([]) }, slug: "morax", equips:[] },
+  { name: "Hu Tao", stats:{ hp: { value:7 }, ...stats.statsFor([]) }, slug: "walnut", equips:[] },
 ]
 const entities: HexGridEntity[] = [];
 let cur = 0;
 let moveCount = 0;
 let path = null;
-const loot = [];
 
 let goal: hex.Hex = null;
 let goalEntity: HexGridEntity = null;
@@ -57,22 +61,19 @@ const addToContainer = (it:HexGridEntity, scale=null) => {
 const team: HexGridEntity[] = avatars.map((avatar, i) => ({
   hex: { q:2+i, r:3 },
   avatar,
-  sprite: PIXI.Sprite.from(`assets/${avatar.slug}.png`),
-  hudPortrait: PIXI.Sprite.from(`assets/${avatar.slug}.png`)
+  sprite: PIXI.Sprite.from(`assets/${avatar.slug}.png`)
 }));
 team.forEach(t => {
-  t.hudPortrait.anchor.set(.5);
-  t.hudPortrait.filters = [new OutlineFilter(3, 0xffffff)];
-  t.sprite.rotation = 0.06;
+  t.sprite.rotation = .06;
   addToContainer(t)
 });
 
 [ // loot on map
-  {hex:{q:8,r:5}, type:"flower", name:"Gladiator's Nostalgia.png"},
-  {hex:{q:4,r:4}, type:"circlet", name:"Royal Masque.png"},
-  {hex:{q:5,r:7}, type:"circlet", name:"Royal Masque.png"},
-  {hex:{q:9,r:7}, type:"circlet", name:"Royal Masque.png"},
-  {hex:{q:1,r:9}, type:"plume", name:"Viridescent Arrow Feather.png"},
+  {hex:{q:8,r:5}, type:"flower" as stats.EquipType, name:"Gladiator's Nostalgia.png"},
+  {hex:{q:4,r:4}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
+  {hex:{q:5,r:7}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
+  {hex:{q:9,r:7}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
+  {hex:{q:1,r:9}, type:"plume" as stats.EquipType, name:"Viridescent Arrow Feather.png"},
 ].forEach(({hex, type, name}) => addToContainer(({
   hex,
   artifact: {name, type, mods: stats.generateArtifactMods(type as stats.EquipType)},
@@ -111,8 +112,7 @@ const draw = {
       }
     }
   },
-  healthBar(bar:PIXI.Graphics, entity:HexGridEntity) {
-    const stats = entity.avatar.stats;
+  healthBar(bar:PIXI.Graphics, stats:stats.Stats) {
     const x = -28*.6 + stats.hp.value / stats.vit.value * 28*2*.6;
     bar.clear().moveTo(-28*.6, 28)
       .lineStyle(4, 0x95d586, .8).lineTo(x, 28)
@@ -127,14 +127,15 @@ const draw = {
 
 draw.outline();
 draw.hex(curHexPath);
-draw.healthBar(healthBar, team[cur]);
+draw.healthBar(healthBar, team[cur].avatar.stats);
 draw.updatePos(entities);
 
 app.stage.addChild(hud.hudContainer);
 hud.hudContainer.position = {x:100, y:500};
-hud.drawHud(team[cur]);
+hud.drawHud(team[cur].avatar);
 
 grid.on('pointerdown', ev => {
+  follow = false;
   const newGoal = hex.from(ev.data.x, ev.data.y);
   const charIdx = team.findIndex(it => hex.sameCell(newGoal, it.hex));
   // console.log("click", { cur, charIdx, goalEntity });
@@ -158,32 +159,34 @@ grid.on('pointerdown', ev => {
 const changeSelectedChar = (charIdx) => {
   cur = charIdx;
   curHexPath.position = team[cur].sprite;
-  draw.healthBar(healthBar, team[cur]);
+  draw.healthBar(healthBar, team[cur].avatar.stats);
   healthBar.position = team[cur].sprite;
   goalEntity = null;
   selectedHexPath.clear();
   realPath.clear();
-  hud.drawHud(team[cur]);
+  hud.drawHud(team[cur].avatar);
 }
 
-function fight() {
+function fight(a:Avatar, e: HexGridEntity) {
   console.log("fight!");
+  entities.splice(entities.findIndex(it => hex.sameCell(it.hex, e.hex)), 1);
   grid.removeChild(goalEntity.sprite);
-  team[cur].avatar.stats.hp.value -= 4;
-  draw.healthBar(healthBar, team[cur]);
-  hud.drawHud(team[cur]);
+  a.stats.hp.value -= 4;
+  draw.healthBar(healthBar, a.stats);
+  hud.updateStats(a.stats);
   realPath.clear();
 }
 
-function pick() {
-  loot.push(goalEntity);
-  entities.splice(entities.findIndex(it => hex.sameCell(it.hex, goalEntity.hex)), 1);
-  console.log("pick!", loot);
-  grid.removeChild(goalEntity.sprite);
-  hud.addEquip(goalEntity);
-  team[cur].avatar.stats = stats.statsFor([goalEntity.artifact.mods], team[cur].avatar.stats);
-  hud.drawHud(team[cur]);
-  // updatePos(loot);
+function pick(a:Avatar, e: HexGridEntity) {
+  entities.splice(entities.findIndex(it => hex.sameCell(it.hex, e.hex)), 1);
+  grid.removeChild(e.sprite);
+  if (a.equips.some(it => it.type === e.artifact.type)) {
+    hud.addToBackpack(e);
+  } else {
+    a.equips.push(e.artifact);
+    a.stats = stats.statsFor([e.artifact.mods], a.stats);
+    hud.drawHud(team[cur].avatar);
+  }
   realPath.clear();
 }
 
@@ -197,9 +200,9 @@ const tickers = [
         draw.path(path, realPath, team[cur].sprite);
         if (path.length !== 0) return;
       } else if (enemies.includes(goalEntity)) {
-        fight();
+        fight(team[cur].avatar, goalEntity);
       } else {
-        pick();
+        pick(team[cur].avatar, goalEntity);
       }
       selectedHexPath.clear();
       follow = false;
