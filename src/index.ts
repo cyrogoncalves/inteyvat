@@ -2,12 +2,11 @@ import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import * as hud from "./hud";
 import * as stats from "./stats";
+import {Avatar, Equip, EquipType, Hex, SIZE, Stats} from "./model";
 
 
-type Avatar = { name:string, stats:stats.Stats, slug:string, equips:Equip[] }
-type Equip = { name:string, type:stats.EquipType, mods:stats.Stats }
 export type HexGridEntity = {
-  hex: hex.Hex,
+  hex: Hex,
   sprite: PIXI.Sprite,
   avatar?: Avatar,
   artifact?: Equip
@@ -25,7 +24,7 @@ let cur = 0;
 let moveCount = 0;
 let path = null;
 
-let goal: hex.Hex = null;
+let goal: Hex = null;
 let goalEntity: HexGridEntity = null;
 let follow = false;
 const enemies: HexGridEntity[] = [];
@@ -53,7 +52,7 @@ const selectedHexPath = grid.addChild(new PIXI.Graphics());
 const addToContainer = (it:HexGridEntity, scale=null) => {
   it.sprite.anchor.set(0.5);
   it.sprite.texture.baseTexture.on('loaded', () =>
-    it.sprite.scale.set(scale || hex.SIZE * Math.sqrt(3) / it.sprite.height));
+    it.sprite.scale.set(scale || SIZE * Math.sqrt(3) / it.sprite.height));
   grid.addChild(it.sprite);
   entities.push(it);
 }
@@ -69,14 +68,14 @@ team.forEach(t => {
 });
 
 [ // loot on map
-  {hex:{q:8,r:5}, type:"flower" as stats.EquipType, name:"Gladiator's Nostalgia.png"},
-  {hex:{q:4,r:4}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
-  {hex:{q:5,r:7}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
-  {hex:{q:9,r:7}, type:"circlet" as stats.EquipType, name:"Royal Masque.png"},
-  {hex:{q:1,r:9}, type:"plume" as stats.EquipType, name:"Viridescent Arrow Feather.png"},
+  {hex:{q:8,r:5}, type:"flower" as EquipType, name:"Gladiator's Nostalgia.png"},
+  {hex:{q:4,r:4}, type:"circlet" as EquipType, name:"Royal Masque.png"},
+  {hex:{q:5,r:7}, type:"circlet" as EquipType, name:"Royal Masque.png"},
+  {hex:{q:9,r:7}, type:"circlet" as EquipType, name:"Royal Masque.png"},
+  {hex:{q:1,r:9}, type:"plume" as EquipType, name:"Viridescent Arrow Feather.png"},
 ].forEach(({hex, type, name}) => addToContainer(({
   hex,
-  artifact: {name, type, mods: stats.generateArtifactMods(type as stats.EquipType)},
+  artifact: {name, type, mods: stats.generateArtifactMods(type as EquipType)},
   sprite: PIXI.Sprite.from(`./assets/${name}`)
 })));
 
@@ -97,7 +96,7 @@ const draw = {
     path.clear().lineStyle(3, color, .4).moveTo(points[5].x, points[5].y);
     points.forEach(p => path.lineTo(p.x, p.y));
   },
-  path: (path: hex.Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointData) => {
+  path: (path: Hex[], realPath: PIXI.Graphics, {x,y}: PIXI.IPointData) => {
     // TODO make path prettier
     realPath.clear().lineStyle(2, 0xFFFFFF).moveTo(x, y);
     path.map(p => hex.toCenterPixel(p)).forEach(p => realPath.lineTo(p.x, p.y));
@@ -112,7 +111,7 @@ const draw = {
       }
     }
   },
-  healthBar(bar:PIXI.Graphics, stats:stats.Stats) {
+  healthBar(bar:PIXI.Graphics, stats:Stats) {
     const x = -28*.6 + stats.hp.value / stats.vit.value * 28*2*.6;
     bar.clear().moveTo(-28*.6, 28)
       .lineStyle(4, 0x95d586, .8).lineTo(x, 28)
@@ -213,13 +212,13 @@ app.ticker.add(delta => tickers.forEach(t=>{
   t.elapsed = (t.elapsed + delta) % t.speed;
 }));
 
-const exchangePlaces = (team: HexGridEntity[], idx: number, hex0: hex.Hex): void => {
+const exchangePlaces = (team: HexGridEntity[], idx: number, hex0: Hex): void => {
   team[idx].hex = hex0;
   [team[idx], team[cur]] = [team[cur], team[idx]];
   cur = idx;
   draw.updatePos(team);
 }
-const move = (goal: hex.Hex, team: HexGridEntity[]): void => {
+const move = (goal: Hex, team: HexGridEntity[]): void => {
   let hex0 = team[cur].hex;
   team[cur].hex = goal;
 

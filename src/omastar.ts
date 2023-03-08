@@ -1,6 +1,4 @@
-export const SIZE = 28;
-
-export type Hex = {q:number, r:number}
+import {Hex, SIZE} from "./model";
 
 const axialDistance = (a:Hex, b:Hex):number =>
     (Math.abs(a.q - b.q)

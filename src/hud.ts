@@ -1,7 +1,7 @@
 import * as PIXI from "pixi.js";
 import * as hex from "./omastar";
 import {OutlineFilter} from "@pixi/filter-outline";
-import {equipTypeNames, Stats} from "./stats";
+import {equipTypeNames, SIZE, Stats} from "./model";
 
 export const hudContainer = new PIXI.Container();
 
@@ -25,7 +25,7 @@ const updatePortrait = (slug:string):void => {
 
 const hudHealthBar = hudContainer.addChild(new PIXI.Graphics());
 hudHealthBar.position = {x:-50, y:64};
-export const drawHealthBar = (stats: Stats, size=hex.SIZE/2) => hudHealthBar.clear()
+export const drawHealthBar = (stats: Stats, size=SIZE/2) => hudHealthBar.clear()
   .lineStyle(6, 0x95d586, .8).lineTo(stats.hp.value * size, 0)
   .lineStyle(6, 0x888888, .8).lineTo(stats.vit.value * size, 0);
 
@@ -53,7 +53,7 @@ inventoryPanel.position = {x:190, y:-100};
 const loadSprite = (slug:string, scale=null):PIXI.Sprite => {
   const sprite = PIXI.Sprite.from(`./assets/${slug}`);
   sprite.anchor.set(0.5);
-  sprite.scale.set(scale || hex.SIZE * Math.sqrt(3) / sprite.height);
+  sprite.scale.set(scale || SIZE * Math.sqrt(3) / sprite.height);
   return sprite;
 }
 const sprites = {};

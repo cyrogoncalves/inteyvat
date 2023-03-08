@@ -1,15 +1,4 @@
-const elementNames = ["anemo", "pyro", "hydro", "cryo", "electro", "geo", "dendro"] as const;
-
-export const subStatNames = ["vit", "str", "def", "em", "er", "cd", "cr"] as const;
-export type SubStatType = typeof subStatNames[number];
-
-export const mainStatNames = [...subStatNames, "healing", ...elementNames, "physical"] as const;
-export type StatType = typeof mainStatNames[number];
-
-export type Stats = { [stat in string]: {value:number} }
-
-export const equipTypeNames = ["weapon", "flower", "plume", "sands", "goblet", "circlet"] as const;
-export type EquipType = typeof equipTypeNames[number];
+import {elementNames, EquipType, Stats, StatType, subStatNames} from "./model";
 
 const mainStatPoolMap: { [e in EquipType]: StatType[] } = {
   "weapon": [],
