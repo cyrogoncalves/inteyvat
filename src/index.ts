@@ -73,11 +73,12 @@ team.forEach(t => {
   {hex:{q:5,r:7}, type:"circlet" as EquipType, name:"Royal Masque.png"},
   {hex:{q:9,r:7}, type:"circlet" as EquipType, name:"Royal Masque.png"},
   {hex:{q:1,r:9}, type:"plume" as EquipType, name:"Viridescent Arrow Feather.png"},
-].forEach(({hex, type, name}) => addToContainer(({
-  hex,
-  artifact: {name, type, mods: stats.generateArtifactMods(type as EquipType)},
-  sprite: PIXI.Sprite.from(`./assets/${name}`)
-})));
+].forEach(({hex, type, name}) => {
+  const artifact = {name, type, mods: stats.generateArtifactMods(type as EquipType)};
+  stats.upgradeArtifact(artifact.mods)
+  stats.upgradeArtifact(artifact.mods)
+  addToContainer({hex, artifact, sprite: PIXI.Sprite.from(`./assets/${name}`)});
+});
 
 for (let i = 0; i < 5; i++) {
   const hilixu = {
@@ -184,7 +185,7 @@ function pick(a:Avatar, e: HexGridEntity) {
     hud.addToBackpack(e);
   } else {
     a.equips.push(e.artifact);
-    a.stats = stats.statsFor([e.artifact.mods], a.stats);
+    a.stats = stats.statsFor(e.artifact.mods, a.stats);
     hud.drawHud(team[cur].avatar);
   }
   realPath.clear();

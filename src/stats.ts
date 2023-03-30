@@ -1,4 +1,4 @@
-import {elementNames, EquipType, Stats, StatType, subStatNames} from "./model";
+import {elementNames, EquipType, Mod, Stats, StatType, subStatNames} from "./model";
 
 const mainStatPoolMap: { [e in EquipType]: StatType[] } = {
   "weapon": [],
@@ -13,32 +13,25 @@ const RNG = {
   select: (arr) => arr[Math.floor(Math.random()*arr.length)]
 }
 
-// export const generateArtifact = (type: ArtifactType, rng=RNG)
+export const generateArtifactMods = (type: EquipType, rng=RNG): Mod[] => {
+  const mainStat = rng.select(mainStatPoolMap[type]);
+  const subStat1 = rng.select(subStatNames.filter(s => s != mainStat));
+  const subStat2 = rng.select(subStatNames.filter(s => s != mainStat && s != subStat1));
+  return [{type:mainStat, value:1}, {type:subStat1, value:0}, {type:subStat2, value: 0}];
+}
 
-export const generateArtifactMods = (
-  type: EquipType,
-  rng=RNG
-): Stats => ({
-  [rng.select(mainStatPoolMap[type])]: {value: 1},
-  [rng.select(subStatNames)]: {value: 0},
-  [rng.select(subStatNames)]: {value: 0},
-})
-
-const base: Stats = {
-  vit: { value:10 },
-  str: { value:1 },
-  def: { value:0 },
-  em: { value:1 },
-  er: { value:1 },
-  cr: { value:1 },
-  cd: { value:15 },
+export const upgradeArtifact = (mods:Mod[]):void => {
+  mods.forEach(m => m.value++);
+  if (mods[0].value < 3) mods[2].value--;
 };
 
-export const statsFor = (mods: Stats[], from: Stats = { ...base }) => {
-  mods.forEach(mod => {
-    const [[k, { value }]] = Object.entries(mod);
-    if (!from[k]) from[k] = { value:0 };
-    from[k].value += value;
-  });
-  return from;
+const base: Stats = Object.entries({
+  vit: 10, str: 1, def: 0, em: 1, er: 1, cr: 1, cd: 15,
+}).reduce((a, [type,value])=>({...a, [type]:{value}}), {});
+
+export const statsFor = (mods: Mod[], from: Stats = { ...base }): Stats => {
+  const ret = {...from};
+  mods.forEach(({type, value}) =>
+    (ret[type] ??= { value:0 }).value += value);
+  return ret;
 }
