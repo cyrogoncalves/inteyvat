@@ -39,12 +39,13 @@ name.position = {x:-42, y:44};
 
 const statsPanel = hudContainer.addChild(new PIXI.Container());
 const statsPanelBg = statsPanel.addChild(new PIXI.Graphics());
-statsPanelBg.beginFill(0x225522)
-  .lineStyle(5, 0x336633)
-  .drawRect(0, 0, 100, 140);
-statsPanel.position = {x:80, y:-100};
+statsPanelBg.beginFill(0x336633)
+  .drawRect(0, 0, 100, 170);
+statsPanel.position = {x:80, y:-130};
 const statsText = statsPanel.addChild(new PIXI.Text("", statStyle));
-statsText.position = {x:5, y:5};
+statsText.position = {x:10, y:5};
+const statsValuesText = statsPanel.addChild(new PIXI.Text("", statStyle));
+statsValuesText.position = {x:40, y:5};
 
 const drawInventoryPanel = (color1, color2) => {
   const panel = new PIXI.Container();
@@ -77,17 +78,17 @@ export const drawHud = (avatar): void => {
     const sprite = sprites[equip.name] ??= loadSprite(equip.name);
     sprite.position = {x:Math.floor(i/3)*110+5, y:(i%3)*55+5};
     const statsText = new PIXI.Text(modDisplayFor([equip.mods[0]]), mainStatStyle);
-    statsText.position = {x: sprite.x + 50, y: sprite.y};
+    statsText.position = {x: sprite.x + 50, y: sprite.y + 3};
     const subStatsText = new PIXI.Text(modDisplayFor(equip.mods.slice(1)), subStatsStyle);
-    subStatsText.position = {x: statsText.x, y: 20 + statsText.y};
+    subStatsText.position = {x: statsText.x, y: statsText.y + 17};
     inventoryPanel.addChild(sprite, statsText, subStatsText);
   })
 }
 
-export const updateStats = (stats) => {
+export const updateStats = (stats:Stats) => {
   drawHealthBar(stats);
-  statsText.text = Object.entries(stats)
-    .map(([k,v]: any[])=>`${k} ${v.value}`).join("\n").toUpperCase();
+  statsText.text = Object.keys(stats).join("\n").toUpperCase();
+  statsValuesText.text = Object.values(stats).map(v=>String(v.value).padStart(3, "0")).join("\n").toUpperCase();
 }
 
 const modDisplayFor = mods => mods.filter(({value}) => value)
