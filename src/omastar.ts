@@ -23,9 +23,9 @@ export const toCenterPixel = ({q,r}: Hex, size=SIZE) =>
 
 export const sameCell = (h1, h2) => h1?.q === h2.q && h1?.r === h2.r;
 
-export const vertexesFor = ({x, y}: {x:number, y:number}, size=SIZE) => [0,1,2,3,4,5].map(i => ({
-  x: x + size * Math.cos(Math.PI / 180 * (60 * i - 30)),
-  y: y + size * Math.sin(Math.PI / 180 * (60 * i - 30))
+export const vertexes = (size=SIZE) => [0,1,2,3,4,5].map(i => ({
+  x: size * Math.cos(Math.PI / 180 * (60 * i - 30)),
+  y: size * Math.sin(Math.PI / 180 * (60 * i - 30))
 }));
 
 // https://www.redblobgames.com/pathfinding/a-star/introduction.html

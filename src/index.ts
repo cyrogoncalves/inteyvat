@@ -91,8 +91,8 @@ for (let i = 0; i < 5; i++) {
 }
 
 const draw = {
-  hex: (path: PIXI.Graphics, point: PIXI.IPointData = {x:0, y:0}, color: number = 0xFFFFFF) => {
-    const points = hex.vertexesFor(point);
+  hex: (path: PIXI.Graphics, color: number = 0xFFFFFF) => {
+    const points = hex.vertexes();
     path.clear().lineStyle(3, color, .4).moveTo(points[5].x, points[5].y);
     points.forEach(p => path.lineTo(p.x, p.y));
   },
@@ -105,7 +105,8 @@ const draw = {
     gridOutline.lineStyle(2, 0xFFFFFF, .1);
     for (let q = 0; q < 17; q++) {
       for (let r = 0; r < 15; r++) {
-        const v = hex.vertexesFor(hex.toCenterPixel({q: q - (r - (r & 1)) / 2, r}));
+        const p = hex.toCenterPixel({q: q - (r - (r & 1)) / 2, r});
+        const v = hex.vertexes().map(({x,y})=>({x:x+p.x,y:y+p.y}));
         gridOutline.moveTo(v[5].x, v[5].y).lineTo(v[0].x, v[0].y)
           .lineTo(v[1].x, v[1].y).lineTo(v[2].x, v[2].y);
       }
@@ -150,8 +151,8 @@ grid.on('pointerdown', ev => {
   goalEntity = entities.find(it => hex.sameCell(goal, it.hex));
   const obstacles = entities.filter(it=>it!==goalEntity).map(t=>t.hex);
   path = hex.omastar(team[cur].hex, goal, obstacles);
-  const color = goalEntity ? 0xFF6666 : 0xFFFF66;
-  draw.hex(selectedHexPath, hex.toCenterPixel(goal), color);
+  draw.hex(selectedHexPath, goalEntity ? 0xFF6666 : 0xFFFF66);
+  selectedHexPath.position = hex.toCenterPixel(goal);
   draw.path(path, realPath, team[cur].sprite);
 });
 

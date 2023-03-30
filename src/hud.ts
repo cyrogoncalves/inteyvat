@@ -7,18 +7,17 @@ export const hudContainer = new PIXI.Container();
 
 const hudHex = hudContainer.addChild(new PIXI.Graphics());
 hudHex.beginFill(0x000000, .5)
-  .drawPolygon(hex.vertexesFor({x:0, y:0}, 72))
-  .endFill();
+  .drawPolygon(hex.vertexes(72)).endFill();
+
+const peek = (element, fn) => { fn(element); return element; }
 
 const portraits = {};
 const hudPortraitContainer = hudContainer.addChild(new PIXI.Container());
 const updatePortrait = (slug:string):void => {
-  if (!portraits[slug]) {
-    const portrait = PIXI.Sprite.from(`assets/${slug}.png`);
+  portraits[slug] ??= peek(PIXI.Sprite.from(`assets/${slug}.png`), portrait => {
     portrait.anchor.set(.5);
     portrait.filters = [new OutlineFilter(3, 0xffffff)];
-    portraits[slug] = portrait;
-  }
+  });
   hudPortraitContainer.removeChildren();
   hudPortraitContainer.addChild(portraits[slug]);
 }
@@ -30,23 +29,26 @@ export const drawHealthBar = (stats: Stats, size=SIZE/2) => hudHealthBar.clear()
   .lineStyle(6, 0x888888, .8).lineTo(stats.vit.value * size, 0);
 
 const styly = new PIXI.TextStyle({fill:"#ffffff", fontSize:24, fontFamily: "ff6"});
-const texty = hudContainer.addChild(new PIXI.Text("", styly));
-texty.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
-texty.position = {x:-42, y:44};
+const statStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:18, fontFamily: "ff6"});
+const subStatsStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:16, fontFamily: "ff6"});
+
+const name = hudContainer.addChild(new PIXI.Text("", styly));
+name.filters = [new OutlineFilter(2, 0x000000, .1, .6)];
+name.position = {x:-42, y:44};
 
 const statsPanel = hudContainer.addChild(new PIXI.Container());
 const statsPanelBg = statsPanel.addChild(new PIXI.Graphics());
-statsPanelBg.beginFill(0x555500)
-  .lineStyle(5, 0xFF0000)
+statsPanelBg.beginFill(0x225522)
+  .lineStyle(5, 0x336633)
   .drawRect(0, 0, 100, 140);
 statsPanel.position = {x:80, y:-100};
-const statsText = statsPanel.addChild(new PIXI.Text("", styly));
+const statsText = statsPanel.addChild(new PIXI.Text("", statStyle));
 statsText.position = {x:5, y:5};
 
 const inventoryPanel = hudContainer.addChild(new PIXI.Container());
 const inventoryPanelBg = inventoryPanel.addChild(new PIXI.Graphics());
-inventoryPanelBg.beginFill(0x555500)
-  .lineStyle(5, 0xFF0000)
+inventoryPanelBg.beginFill(0x225522)
+  .lineStyle(5, 0x336633)
   .drawRect(0, 0, 220, 140);
 inventoryPanel.position = {x:190, y:-100};
 
@@ -59,7 +61,7 @@ const loadSprite = (slug:string, scale=null):PIXI.Sprite => {
 const sprites = {};
 export const drawHud = (avatar): void => {
   updatePortrait(avatar.slug);
-  texty.text = avatar.name;
+  name.text = avatar.name;
   updateStats(avatar.stats);
   // console.log(inventoryPanel)
   if (inventoryPanel.children.length > 1)
@@ -88,12 +90,10 @@ export const updateStats = (stats) => {
 const modDisplayFor = mods => mods.filter(([_,v]: any[]) => v.value > 0)
   .map(([k,v]: any[]) => `${k} +${v.value}`).join("\n").toUpperCase();
 
-const subStatsStyle = new PIXI.TextStyle({fill:"#ffffff", fontSize:16, fontFamily: "ff6"});
-
 const backpackPanel = hudContainer.addChild(new PIXI.Container());
 backpackPanel.position = {x:-80, y:-200};
-backpackPanel.addChild(new PIXI.Graphics().beginFill(0x555500)
-  .lineStyle(5, 0xFF0000).drawRect(0, 0, 300, 50));
+backpackPanel.addChild(new PIXI.Graphics().beginFill(0x225522)
+  .lineStyle(5, 0x336633).drawRect(0, 0, 300, 50));
 export function addToBackpack(art/*: HexGridEntity*/) {
   art.sprite.position = { x:-40 + 60 * backpackPanel.children.length, y: 20 };
   backpackPanel.addChild(art.sprite);
